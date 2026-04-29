@@ -2,6 +2,7 @@
 
 $db = getPDO();
 
+
 $stats = [];
 
 if ($currentRole === 'admin') {
