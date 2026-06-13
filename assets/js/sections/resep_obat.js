@@ -9,6 +9,8 @@ async function renderResepObat() {
 }
 
 function _buildResepPage(data) {
+  const showPatient = currentRole !== 'pasien';
+  const showDoctor = currentRole === 'admin';
   return `
   <div class="section-header">
     <div><h2>Resep Obat</h2><p>Manajemen resep dan pengeluaran obat</p></div>
@@ -22,20 +24,21 @@ function _buildResepPage(data) {
     <div class="card-header"><h3><i class="fa-solid fa-list-ul"></i> Daftar Resep</h3></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>ID Resep</th><th>Pasien</th><th>Dokter</th><th>Tanggal</th><th>Jml Obat</th><th>Aksi</th></tr></thead>
+        <thead><tr><th>ID Resep</th>${showPatient ? '<th>Pasien</th>' : ''}${showDoctor ? '<th>Dokter</th>' : ''}<th>Tanggal</th><th>Jml Obat</th><th>Aksi</th></tr></thead>
         <tbody>
           ${data.length === 0
-            ? '<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:20px;">Belum ada resep.</td></tr>'
+            ? `<tr><td colspan="${4 + (showPatient ? 1 : 0) + (showDoctor ? 1 : 0)}" style="text-align:center;color:var(--text-light);padding:20px;">Belum ada resep.</td></tr>`
             : data.map(r=>`<tr>
                 <td><span class="badge badge-muted">${r.kode}</span></td>
-                <td><strong>${r.nama_pasien}</strong></td>
-                <td>${r.nama_dokter}</td>
+                ${showPatient ? `<td><strong>${r.nama_pasien}</strong></td>` : ''}
+                ${showDoctor ? `<td>${r.nama_dokter}</td>` : ''}
                 <td>${r.tanggal}</td>
                 <td><span class="badge badge-info">${r.detail.length} obat</span></td>
                 <td>
                   <button class="btn btn-xs btn-secondary" onclick="detailResep(${r.id})"><i class="fa-solid fa-eye"></i> Detail</button>
                   ${currentRole !== 'pasien'
-                    ? `<button class="btn btn-xs btn-danger" onclick="hapusResep(${r.id},'${r.kode}')"><i class="fa-solid fa-trash"></i></button>`
+                    ? `<button class="btn btn-xs btn-outline" onclick="openFormResep(${r.id})"><i class="fa-solid fa-pen"></i></button>
+                       <button class="btn btn-xs btn-danger" onclick="hapusResep(${r.id},'${r.kode}')"><i class="fa-solid fa-trash"></i></button>`
                     : ''}
                 </td>
               </tr>`).join('')}
@@ -61,30 +64,52 @@ function _buildResepPage(data) {
   </div>`;
 }
 
-function openFormResep() {
-  _editResepId = null;
-  _resepItems  = [{ obat_id: _obatList[0]?.id||'', jumlah:1, aturan:'' }];
-  _renderFormResep();
+function openFormResep(id = null) {
+  _editResepId = id;
+  const resep = id ? _resepData.find(x => x.id === id) : null;
+  _resepItems = resep?.detail?.length
+    ? resep.detail.map(d => ({ obat_id: d.obat_id, jumlah: d.jumlah, aturan: d.aturan || '' }))
+    : [{ obat_id: _obatList[0]?.id||'', jumlah:1, aturan:'' }];
+  _renderFormResep(resep || null);
 }
 
-function _renderFormResep() {
-  const today      = new Date().toISOString().split('T')[0];
-  const pasienOpts = _pasienList.map(p => `<option value="${p.id}">${p.nama}</option>`).join('');
-  openModal('Buat Resep Baru', `
+function _renderFormResep(resep = null) {
+  const today = new Date().toISOString().split('T')[0];
+  const pasienId = resep?.pasien_id || _pasienList[0]?.id || '';
+  let dokterId = resep?.dokter_id || _dokterList[0]?.id || '';
+  if (!resep && currentRole === 'dokter') {
+    const d = currentDokter();
+    if (d) dokterId = d.id;
+  }
+  const tanggal = resep?.tanggal || today;
+  const catatan = resep?.catatan || '';
+  const pasienOpts = _pasienList.map(p => `<option value="${p.id}" ${String(p.id)===String(pasienId)?'selected':''}>${p.nama}</option>`).join('');
+  const dokterOpts = _dokterList.map(d => `<option value="${d.id}" ${String(d.id)===String(dokterId)?'selected':''}>${d.nama}</option>`).join('');
+  openModal(resep ? 'Edit Resep' : 'Buat Resep Baru', `
     <div class="resep-section-title"><i class="fa-solid fa-file-prescription"></i> A. DATA RESEP</div>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Pasien *</label>
         <select id="frm-rx-pasien" class="form-control">${pasienOpts}</select>
       </div>
+      ${currentRole === 'admin' ? `<div class="form-group">
+        <label class="form-label">Dokter *</label>
+        <select id="frm-rx-dokter" class="form-control">${dokterOpts}</select>
+      </div>` : `<div class="form-group">
+        <label class="form-label">Dokter</label>
+        <input type="text" class="form-control" value="${currentDokter()?.nama || currentName}" disabled>
+        <input type="hidden" id="frm-rx-dokter" value="${dokterId}">
+      </div>`}
+    </div>
+    <div class="form-row">
       <div class="form-group">
         <label class="form-label">Tanggal</label>
-        <input type="date" id="frm-rx-tgl" class="form-control" value="${today}">
+        <input type="date" id="frm-rx-tgl" class="form-control" value="${tanggal}">
       </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Catatan</label>
-      <input type="text" id="frm-rx-catatan" class="form-control" placeholder="Catatan umum resep...">
+      <div class="form-group">
+        <label class="form-label">Catatan</label>
+        <input type="text" id="frm-rx-catatan" class="form-control" placeholder="Catatan umum resep..." value="${catatan}">
+      </div>
     </div>
     <div class="resep-section-title" style="margin-top:4px;"><i class="fa-solid fa-capsules"></i> B. DETAIL OBAT</div>
     <div id="resep-items-list">
@@ -149,22 +174,17 @@ function hapusItemResep(i) {
 async function saveFormResep() {
   _syncResepItems();
   const pasien_id = val('frm-rx-pasien');
+  const dokter_id = val('frm-rx-dokter');
   const tanggal   = val('frm-rx-tgl');
   const catatan   = val('frm-rx-catatan');
   const detail    = _resepItems.filter(x => x.obat_id);
 
   if (!pasien_id) { showToast('Pilih pasien!', 'error'); return; }
+  if (!dokter_id) { showToast('Pilih dokter!', 'error'); return; }
   if (!detail.length) { showToast('Tambahkan minimal 1 obat!', 'error'); return; }
 
-  // Cari dokter_id dari nama dokter yang login (jika role dokter)
-  let dokter_id = _dokterList[0]?.id || 0;
-  if (currentRole === 'dokter') {
-    const d = _dokterList.find(x => x.nama === currentName);
-    if (d) dokter_id = d.id;
-  }
-
   try {
-    const res = await apiPost('resep.php', 'create', { pasien_id, dokter_id, tanggal, catatan, detail });
+    const res = await apiPost('resep.php', _editResepId ? 'update' : 'create', { id: _editResepId || undefined, pasien_id, dokter_id, tanggal, catatan, detail });
     closeModal();
     showToast(res.msg, 'success');
     renderSection('resep-obat');
@@ -197,8 +217,8 @@ function detailResep(id) {
     <div class="grid-2" style="margin-bottom:14px;">
       <div class="detail-field"><label>ID Resep</label><div class="val">${r.kode}</div></div>
       <div class="detail-field"><label>Tanggal</label><div class="val">${r.tanggal}</div></div>
-      <div class="detail-field"><label>Pasien</label><div class="val">${r.nama_pasien}</div></div>
-      <div class="detail-field"><label>Dokter</label><div class="val">${r.nama_dokter}</div></div>
+      ${currentRole !== 'pasien' ? `<div class="detail-field"><label>Pasien</label><div class="val">${r.nama_pasien}</div></div>` : ''}
+      ${currentRole === 'admin' ? `<div class="detail-field"><label>Dokter</label><div class="val">${r.nama_dokter}</div></div>` : ''}
     </div>
     ${r.catatan ? `<div class="detail-field"><label>Catatan</label><div class="val">${r.catatan}</div></div><div class="separator"></div>` : ''}
     <div class="resep-section-title"><i class="fa-solid fa-list-check"></i> B. DETAIL OBAT</div>

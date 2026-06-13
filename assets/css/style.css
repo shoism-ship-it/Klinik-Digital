@@ -840,3 +840,126 @@ tbody td strong { font-weight: 600; color: var(--dark); }
 }
 .alert-danger { background: rgba(217,81,81,0.1); color: var(--danger); border: 1px solid rgba(217,81,81,0.2); }
 .alert-success { background: rgba(61,168,122,0.1); color: var(--success); border: 1px solid rgba(61,168,122,0.2); }
+
+/* ============================
+   ROLE THEMES + TAILWIND LAYER
+   ============================ */
+.role-theme-admin {
+  --role-main: #4A707A;
+  --role-soft: rgba(74,112,122,0.10);
+  --role-accent: #7697A0;
+}
+.role-theme-dokter {
+  --role-main: #2f855a;
+  --role-soft: rgba(47,133,90,0.10);
+  --role-accent: #38a169;
+}
+.role-theme-pasien {
+  --role-main: #b7791f;
+  --role-soft: rgba(183,121,31,0.11);
+  --role-accent: #d69e2e;
+}
+.role-dashboard {
+  border-top: 4px solid var(--role-main);
+  background: linear-gradient(180deg, var(--role-soft), transparent 180px);
+  border-radius: var(--radius-lg);
+  padding-top: 14px;
+}
+.role-dashboard .stat-icon.teal,
+.role-dashboard .stat-icon.green,
+.role-dashboard .stat-icon.orange,
+.role-dashboard .stat-icon.red {
+  background: var(--role-soft);
+  color: var(--role-main);
+}
+.role-dashboard .stat-val,
+.role-dashboard .card-header h3 i {
+  color: var(--role-main);
+}
+
+/* ============================
+   CHART AXIS + QUEUE + QRIS
+   ============================ */
+.chart-axis-y {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-light);
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.bar span {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text-light);
+  font-weight: 700;
+}
+.queue-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--role-soft, rgba(74,112,122,0.10));
+  color: var(--role-main, var(--c1));
+  font-weight: 800;
+  font-size: 12px;
+}
+.qris-box {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.qris-box h4 {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+.qris-box p {
+  color: var(--text-light);
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.qris-visual {
+  width: 106px;
+  height: 126px;
+  padding: 8px;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.qris-visual strong {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--dark);
+}
+.qris-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 9px);
+  grid-template-rows: repeat(9, 9px);
+  gap: 2px;
+}
+.qris-grid span {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: #edf2f2;
+}
+.qris-grid span.on {
+  background: var(--dark);
+}

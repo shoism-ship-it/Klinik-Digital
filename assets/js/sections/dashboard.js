@@ -11,7 +11,13 @@ async function renderDashboard() {
 }
 
 async function renderDashAdmin(stats, body) {
+  const monthly = Array.from({ length: 12 }, (_, i) => {
+    const row = (stats.kunjungan_bulanan || []).find(x => parseInt(x.bulan) === i + 1);
+    return row ? parseInt(row.jumlah) : 0;
+  });
+  const maxMonthly = Math.max(...monthly, 1);
   body.innerHTML = `
+  <div class="role-dashboard role-dashboard-admin">
   <div class="stats-row">
     <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-users"></i></div><div><div class="stat-val">${stats.total_pasien??'-'}</div><div class="stat-lbl">Total Pasien</div></div></div>
     <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-calendar-check"></i></div><div><div class="stat-val">${stats.total_rekam??'-'}</div><div class="stat-lbl">Kunjungan Bulan Ini</div></div></div>
@@ -20,10 +26,14 @@ async function renderDashAdmin(stats, body) {
   </div>
   <div class="grid-2" style="margin-bottom:16px;">
     <div class="card">
-      <div class="card-header"><h3><i class="fa-solid fa-chart-bar"></i> Kunjungan Bulanan 2024</h3></div>
+      <div class="card-header"><h3><i class="fa-solid fa-chart-bar"></i> Kunjungan Bulanan ${new Date().getFullYear()}</h3><span class="badge badge-info">Sumbu X/Y</span></div>
       <div class="card-body">
+        <div class="chart-axis-y"><span>100%</span><span>50%</span><span>0%</span></div>
         <div class="bar-chart">
-          ${[55,70,60,85,75,90,65,80,45,70,60,95].map(v=>`<div class="bar" style="height:${v}%" data-val="${v}"></div>`).join('')}
+          ${monthly.map(v=>{
+            const pct = Math.round((v / maxMonthly) * 100);
+            return `<div class="bar" style="height:${Math.max(8, pct)}%" data-val="${pct}%"><span>${v}</span></div>`;
+          }).join('')}
         </div>
         <div class="bar-labels">
           ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'].map(m=>`<span>${m}</span>`).join('')}
@@ -57,15 +67,18 @@ async function renderDashAdmin(stats, body) {
         <button class="btn btn-outline btn-sm" onclick="renderSection('data-dokter')">Lihat Data Dokter</button>
       </div>
     </div>
+  </div>
   </div>`;
 }
 
 async function renderDashDokter(stats, body) {
   body.innerHTML = `
-  <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+  <div class="role-dashboard role-dashboard-dokter">
+  <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
     <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-calendar-day"></i></div><div><div class="stat-val">${stats.pasien_hari_ini??'-'}</div><div class="stat-lbl">Pasien Hari Ini</div></div></div>
     <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-file-medical"></i></div><div><div class="stat-val">${stats.total_pasien_bulan??'-'}</div><div class="stat-lbl">Rekam Medis Bulan Ini</div></div></div>
     <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-calendar-week"></i></div><div><div class="stat-val">${stats.jadwal_aktif??'-'}</div><div class="stat-lbl">Jadwal Aktif</div></div></div>
+    <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-list-ol"></i></div><div><div class="stat-val">${stats.antrian_hari_ini??'-'}</div><div class="stat-lbl">Antrian Hari Ini</div></div></div>
   </div>
   <div class="grid-2">
     <div class="card">
@@ -74,6 +87,7 @@ async function renderDashDokter(stats, body) {
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
           <button class="btn btn-primary" onclick="renderSection('rekam-medis')"><i class="fa-solid fa-plus"></i> Input Rekam Medis</button>
           <button class="btn btn-outline" onclick="renderSection('resep-obat')"><i class="fa-solid fa-prescription"></i> Buat Resep</button>
+          <button class="btn btn-outline" onclick="renderSection('booking')"><i class="fa-solid fa-list-ol"></i> Lihat Antrian</button>
           <button class="btn btn-outline" onclick="renderSection('jadwal')"><i class="fa-solid fa-calendar"></i> Lihat Jadwal</button>
         </div>
       </div>
@@ -85,15 +99,18 @@ async function renderDashDokter(stats, body) {
         <div class="detail-field"><label>Role</label><div class="val"><span class="badge badge-info">Dokter</span></div></div>
       </div>
     </div>
+  </div>
   </div>`;
 }
 
 async function renderDashPasien(stats, body) {
   body.innerHTML = `
-  <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+  <div class="role-dashboard role-dashboard-pasien">
+  <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
     <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-stethoscope"></i></div><div><div class="stat-val">${stats.total_kunjungan??'-'}</div><div class="stat-lbl">Total Kunjungan</div></div></div>
     <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-prescription-bottle"></i></div><div><div class="stat-val">${stats.total_resep??'-'}</div><div class="stat-lbl">Resep Diterima</div></div></div>
     <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-calendar-check"></i></div><div><div class="stat-val">${stats.booking_aktif??'-'}</div><div class="stat-lbl">Booking Aktif</div></div></div>
+    <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-qrcode"></i></div><div><div class="stat-val">${stats.transaksi_menunggu??'-'}</div><div class="stat-lbl">Transaksi Menunggu</div></div></div>
   </div>
   <div class="grid-2">
     <div class="card">
@@ -110,7 +127,9 @@ async function renderDashPasien(stats, body) {
       <div class="card-body" style="display:flex;align-items:center;gap:12px;">
         <button class="btn btn-primary" onclick="renderSection('booking')"><i class="fa-solid fa-calendar-plus"></i> Buat Booking</button>
         <button class="btn btn-outline" onclick="renderSection('riwayat')"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Saya</button>
+        <button class="btn btn-outline" onclick="renderSection('transaksi')"><i class="fa-solid fa-qrcode"></i> Transaksi Saya</button>
       </div>
     </div>
+  </div>
   </div>`;
 }

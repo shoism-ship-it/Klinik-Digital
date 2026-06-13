@@ -2,6 +2,11 @@
 session_start();
 require_once __DIR__ . '/../config/db.php';
 
+use Klinik\Core\AuthContext;
+use Klinik\Core\Database;
+use Klinik\Core\Request;
+use Klinik\Core\Response;
+
 header('Content-Type: application/json; charset=utf-8');
 
 // Auth guard — semua API butuh login
@@ -14,6 +19,10 @@ if (empty($_SESSION['role'])) {
 $currentRole = $_SESSION['role'];
 $currentName = $_SESSION['name'];
 $currentUserId = $_SESSION['user_id'] ?? null;
+$request = new Request();
+$response = new Response();
+$auth = AuthContext::fromSession();
+$db = Database::connection();
 
 function ok(mixed $data = null, string $msg = 'OK'): void {
     echo json_encode(['ok' => true, 'msg' => $msg, 'data' => $data]);
