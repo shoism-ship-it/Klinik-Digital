@@ -6,5 +6,9 @@
 <title><?= $pageTitle ?? 'Klinik Digital Polibatam' ?></title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+<script>
+tailwind = { config: { corePlugins: { preflight: false } } };
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="<?= $assetBase ?? '' ?>assets/css/style.css">
 </head>
