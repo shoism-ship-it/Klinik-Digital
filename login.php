@@ -65,7 +65,7 @@ include 'includes/head.php';
           <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;color:var(--text-light);">
             <input type="checkbox" checked> Ingat saya
           </label>
-          <button type="button" class="link-btn">Lupa password?</button>
+          <button type="button" class="link-btn" onclick="alert('Silakan hubungi admin klinik untuk reset password demo.')">Lupa password?</button>
         </div>
 
         <button type="submit" class="btn btn-primary btn-w-full" style="margin-bottom:12px;">
