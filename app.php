@@ -13,7 +13,7 @@ $userName = $_SESSION['name'];
 $pageTitle = 'Dashboard — Klinik Digital Polibatam';
 include 'includes/head.php';
 ?>
-<body>
+<body class="role-theme-<?= htmlspecialchars($role) ?>">
 
 <div class="app-page">
 
@@ -22,7 +22,7 @@ include 'includes/head.php';
     <div class="sidebar-brand">
       <div class="sidebar-brand-icon"><i class="fa-solid fa-hospital-user"></i></div>
       <div class="sidebar-brand-text">
-        <strong>Klinik Digital Polibatam</strong>
+        <strong>Klinik Polibatam</strong>
         <span>SIM Klinik Kampus</span>
       </div>
     </div>
@@ -46,8 +46,8 @@ include 'includes/head.php';
       </div>
       <div class="topbar-right">
         <span class="role-chip role-<?= $role ?>" id="topbar-role-chip"><?= ucfirst($role) ?></span>
-        <div class="topbar-badge"><i class="fa-solid fa-bell"></i><div class="dot"></div></div>
-        <div class="topbar-badge"><i class="fa-solid fa-gear"></i></div>
+        <button type="button" class="topbar-badge" onclick="openTopbarInfo('Notifikasi', 'Belum ada notifikasi baru. Semua aktivitas klinik akan muncul di sini.')"><i class="fa-solid fa-bell"></i><div class="dot"></div></button>
+        <button type="button" class="topbar-badge" onclick="openTopbarInfo('Pengaturan', 'Pengaturan akun dan preferensi sistem siap dikembangkan dari menu ini.')"><i class="fa-solid fa-gear"></i></button>
       </div>
     </div>
     <div class="content-body" id="content-body"></div>
