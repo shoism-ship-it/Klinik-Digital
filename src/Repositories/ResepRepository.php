@@ -1,0 +1,134 @@
+<?php
+
+namespace Klinik\Repositories;
+
+use Throwable;
+
+class ResepRepository extends BaseRepository
+{
+    public function list(string $q = '', int $pasienId = 0, int $dokterId = 0): array
+    {
+        $sql = 'SELECT r.*, p.nama AS nama_pasien, d.nama AS nama_dokter
+                FROM resep r
+                JOIN pasien p ON r.pasien_id = p.id
+                JOIN dokter d ON r.dokter_id = d.id';
+        $params = [];
+        $where = [];
+        if ($q !== '') {
+            $where[] = '(p.nama LIKE ? OR d.nama LIKE ?)';
+            array_push($params, "%$q%", "%$q%");
+        }
+        if ($pasienId) {
+            $where[] = 'r.pasien_id = ?';
+            $params[] = $pasienId;
+        }
+        if ($dokterId) {
+            $where[] = 'r.dokter_id = ?';
+            $params[] = $dokterId;
+        }
+        if ($where) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+        $sql .= ' ORDER BY r.tanggal DESC, r.id DESC';
+
+        $rows = $this->fetchAll($sql, $params);
+        foreach ($rows as &$row) {
+            $row = $this->withDetail($row);
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    public function find(int $id): ?array
+    {
+        $row = $this->fetchOne(
+            'SELECT r.*, p.nama AS nama_pasien, d.nama AS nama_dokter
+             FROM resep r
+             JOIN pasien p ON r.pasien_id = p.id
+             JOIN dokter d ON r.dokter_id = d.id
+             WHERE r.id = ?',
+            [$id]
+        );
+
+        return $row ? $this->withDetail($row) : null;
+    }
+
+    public function create(array $data): array
+    {
+        $this->db->beginTransaction();
+        try {
+            $this->execute(
+                'INSERT INTO resep (rekam_medis_id, pasien_id, dokter_id, tanggal, catatan) VALUES (?, ?, ?, ?, ?)',
+                [
+                    (int)($data['rekam_medis_id'] ?? 0),
+                    (int)($data['pasien_id'] ?? 0),
+                    (int)($data['dokter_id'] ?? 0),
+                    $data['tanggal'] ?? '',
+                    $data['catatan'] ?? '',
+                ]
+            );
+            $id = (int)$this->db->lastInsertId();
+            $this->replaceDetail($id, $data['detail'] ?? []);
+            $this->db->commit();
+
+            return ['id' => $id, 'kode' => $this->code('R', $id)];
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function update(int $id, array $data): void
+    {
+        $this->db->beginTransaction();
+        try {
+            $this->execute(
+                'UPDATE resep SET pasien_id=?, dokter_id=?, tanggal=?, catatan=? WHERE id=?',
+                [
+                    (int)($data['pasien_id'] ?? 0),
+                    (int)($data['dokter_id'] ?? 0),
+                    $data['tanggal'] ?? '',
+                    $data['catatan'] ?? '',
+                    $id,
+                ]
+            );
+            $this->execute('DELETE FROM resep_detail WHERE resep_id = ?', [$id]);
+            $this->replaceDetail($id, $data['detail'] ?? []);
+            $this->db->commit();
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function delete(int $id): void
+    {
+        $this->execute('DELETE FROM resep WHERE id = ?', [$id]);
+    }
+
+    private function withDetail(array $row): array
+    {
+        $row['detail'] = $this->fetchAll(
+            'SELECT rd.*, o.nama AS nama_obat FROM resep_detail rd JOIN obat o ON rd.obat_id = o.id WHERE rd.resep_id = ?',
+            [(int)$row['id']]
+        );
+        $row['kode'] = $this->code('R', (int)$row['id']);
+        return $row;
+    }
+
+    private function replaceDetail(int $resepId, array $detail): void
+    {
+        foreach ($detail as $item) {
+            $this->execute(
+                'INSERT INTO resep_detail (resep_id, obat_id, jumlah, aturan) VALUES (?, ?, ?, ?)',
+                [
+                    $resepId,
+                    (int)($item['obat_id'] ?? 0),
+                    (int)($item['jumlah'] ?? 1),
+                    $item['aturan'] ?? '',
+                ]
+            );
+        }
+    }
+}
