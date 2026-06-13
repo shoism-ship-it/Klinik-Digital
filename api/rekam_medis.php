@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/_api.php';
 
-<<<<<<< HEAD
 $db = getPDO();
 
 
@@ -86,14 +85,3 @@ switch ($action) {
     default:
         err('Action tidak dikenal');
 }
-=======
-$controller = new \Klinik\Controllers\RekamMedisController(
-    $request,
-    $response,
-    $auth,
-    new \Klinik\Repositories\RekamMedisRepository($db),
-    new \Klinik\Repositories\DokterRepository($db),
-    new \Klinik\Repositories\PasienRepository($db)
-);
-$controller->dispatch($action);
->>>>>>> 5bdbbd1c5acc8dbc677c26c9be3b046cd4ca695f
