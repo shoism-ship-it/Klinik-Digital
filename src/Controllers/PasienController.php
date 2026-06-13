@@ -58,4 +58,8 @@ class PasienController extends BaseController
         $this->repo->delete($id);
         $this->response->ok(null, 'Pasien berhasil dihapus');
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ac661c2cdbe7a03b19f2b09a25d9d024c6a3215d

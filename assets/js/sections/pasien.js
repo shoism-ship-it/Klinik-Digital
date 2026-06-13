@@ -132,6 +132,7 @@ async function saveFormPasien() {
     const res = await apiPost('pasien.php', _editPasienId ? 'update' : 'create', payload);
     showToast(res.msg, 'success');
     closeModal();
+    await reloadReferenceData();
     renderSection('data-pasien');
   } catch (e) { showToast(e.message, 'error'); }
 }
@@ -151,6 +152,7 @@ async function _konfirmasiHapusPasien(id) {
     const res = await apiPost('pasien.php', 'delete', { id });
     closeModal();
     showToast(res.msg, 'info');
+    await reloadReferenceData();
     renderSection('data-pasien');
   } catch (e) { showToast(e.message, 'error'); }
 }

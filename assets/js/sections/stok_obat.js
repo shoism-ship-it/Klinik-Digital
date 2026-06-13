@@ -117,6 +117,7 @@ async function saveFormObat() {
     const res = await apiPost('obat.php', _editObatId ? 'update' : 'create', payload);
     showToast(res.msg, 'success');
     closeModal();
+    await reloadReferenceData();
     renderSection('stok-obat');
   } catch (e) { showToast(e.message, 'error'); }
 }
@@ -152,6 +153,7 @@ async function saveUpdateStok(id) {
     const res = await apiPost('obat.php', 'update_stok', { id, delta });
     closeModal();
     showToast(res.msg, 'success');
+    await reloadReferenceData();
     renderSection('stok-obat');
   } catch (e) { showToast(e.message, 'error'); }
 }
@@ -171,6 +173,7 @@ async function _konfirmasiHapusObat(id) {
     const res = await apiPost('obat.php', 'delete', { id });
     closeModal();
     showToast(res.msg, 'info');
+    await reloadReferenceData();
     renderSection('stok-obat');
   } catch (e) { showToast(e.message, 'error'); }
 }

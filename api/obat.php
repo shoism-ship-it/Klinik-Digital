@@ -1,6 +1,9 @@
-<?php require_once __DIR__ . '/_api.php';
+<?php
+require_once __DIR__ . '/_api.php';
 
+<<<<<<< HEAD
 $db = getPDO();
+
 
 switch ($action) {
     case 'list':
@@ -80,3 +83,12 @@ switch ($action) {
     default:
         err('Action tidak dikenal');
 }
+=======
+$controller = new \Klinik\Controllers\ObatController(
+    $request,
+    $response,
+    $auth,
+    new \Klinik\Repositories\ObatRepository($db)
+);
+$controller->dispatch($action);
+>>>>>>> 5bdbbd1c5acc8dbc677c26c9be3b046cd4ca695f

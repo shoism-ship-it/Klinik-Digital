@@ -39,4 +39,8 @@ class StatsController extends BaseController
         $year = (int)$this->query('year', date('Y'));
         $this->response->ok($this->stats->laporan($year));
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ac661c2cdbe7a03b19f2b09a25d9d024c6a3215d

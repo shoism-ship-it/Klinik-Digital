@@ -8,6 +8,7 @@ async function renderRekamMedis() {
 }
 
 function _buildRmPage(data) {
+  const showDoctor = currentRole === 'admin';
   return `
   <div class="section-header">
     <div><h2>Rekam Medis</h2><p>Input dan riwayat rekam medis pasien</p></div>
@@ -21,7 +22,7 @@ function _buildRmPage(data) {
   <div class="card">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>ID</th><th>Pasien</th><th>Dokter</th><th>Tanggal</th><th>Diagnosa</th><th>Aksi</th></tr></thead>
+        <thead><tr><th>ID</th><th>Pasien</th>${showDoctor ? '<th>Dokter</th>' : ''}<th>Tanggal</th><th>Diagnosa</th><th>Aksi</th></tr></thead>
         <tbody id="tbody-rm">${_rowsRm(data)}</tbody>
       </table>
     </div>
@@ -29,11 +30,12 @@ function _buildRmPage(data) {
 }
 
 function _rowsRm(data) {
-  if (!data.length) return '<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:20px;">Belum ada rekam medis.</td></tr>';
+  const showDoctor = currentRole === 'admin';
+  if (!data.length) return `<tr><td colspan="${showDoctor ? 6 : 5}" style="text-align:center;color:var(--text-light);padding:20px;">Belum ada rekam medis.</td></tr>`;
   return data.map(r => `<tr>
     <td><span class="badge badge-muted">${r.kode}</span></td>
     <td><strong>${r.nama_pasien}</strong></td>
-    <td>${r.nama_dokter}</td>
+    ${showDoctor ? `<td>${r.nama_dokter}</td>` : ''}
     <td>${r.tanggal}</td>
     <td>${r.diagnosa}</td>
     <td>
@@ -60,6 +62,10 @@ async function openFormRekamMedis(id = null) {
   }
 
   const pasienOpts = _pasienList.map(p => `<option value="${p.id}" ${r.pasien_id==p.id?'selected':''}>${p.nama}</option>`).join('');
+  const dokterLogin = currentDokter();
+  if (!id && currentRole === 'dokter' && dokterLogin) {
+    r.dokter_id = dokterLogin.id;
+  }
   const dokterOpts = _dokterList.map(d => `<option value="${d.id}" ${r.dokter_id==d.id?'selected':''}>${d.nama}</option>`).join('');
 
   openModal(id ? 'Edit Rekam Medis' : 'Input Rekam Medis Baru', `
@@ -68,10 +74,14 @@ async function openFormRekamMedis(id = null) {
         <label class="form-label">Pasien *</label>
         <select id="frm-rm-pasien" class="form-control">${pasienOpts}</select>
       </div>
-      <div class="form-group">
+      ${currentRole === 'admin' ? `<div class="form-group">
         <label class="form-label">Dokter *</label>
         <select id="frm-rm-dokter" class="form-control">${dokterOpts}</select>
-      </div>
+      </div>` : `<div class="form-group">
+        <label class="form-label">Dokter</label>
+        <input type="text" class="form-control" value="${dokterLogin?.nama || currentName}" disabled>
+        <input type="hidden" id="frm-rm-dokter" value="${r.dokter_id || dokterLogin?.id || ''}">
+      </div>`}
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -155,7 +165,7 @@ async function detailRekamMedis(id) {
   openModal('Detail Rekam Medis — ' + r.kode, `
     <div class="grid-2">
       <div class="detail-field"><label>Pasien</label><div class="val">${r.nama_pasien||r.pasien_id}</div></div>
-      <div class="detail-field"><label>Dokter</label><div class="val">${r.nama_dokter||r.dokter_id}</div></div>
+      ${currentRole === 'admin' ? `<div class="detail-field"><label>Dokter</label><div class="val">${r.nama_dokter||r.dokter_id}</div></div>` : ''}
       <div class="detail-field"><label>Tanggal</label><div class="val">${r.tanggal}</div></div>
       <div class="detail-field"><label>Tekanan Darah</label><div class="val">${r.tekanan_darah||'-'}</div></div>
       <div class="detail-field"><label>Berat Badan</label><div class="val">${r.berat_badan ? r.berat_badan+' kg' : '-'}</div></div>
