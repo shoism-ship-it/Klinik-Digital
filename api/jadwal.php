@@ -2,6 +2,7 @@
 
 $db = getPDO();
 
+
 switch ($action) {
     case 'list':
         $sql = 'SELECT j.*, d.nama AS nama_dokter, d.spesialis

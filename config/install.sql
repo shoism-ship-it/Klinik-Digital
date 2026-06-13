@@ -1,5 +1,11 @@
 -- Klinik Digital Polibatam — Schema + Seed Data
--- Run: mysql -u root -p < config/install.sql
+-- Run: mysql -u rCREATE TABLE pasien (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nama VARCHAR(100),
+    email VARCHAR(100),
+    no_hp VARCHAR(20),
+    alamat TEXT
+);oot -p < config/install.sql
 
 CREATE DATABASE IF NOT EXISTS klinik_polibatam CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE klinik_polibatam;
