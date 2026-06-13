@@ -28,3 +28,11 @@ function val(id) {
 function kode(prefix, id) {
   return prefix + String(id).padStart(3, '0');
 }
+
+function currentDokter() {
+  return _dokterList.find(d => d.nama === currentName) || null;
+}
+
+function currentPasien() {
+  return _pasienList.find(p => p.nama === currentName) || null;
+}

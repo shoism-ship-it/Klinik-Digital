@@ -7,6 +7,7 @@ const menus = {
       { key:'jadwal', icon:'fa-calendar-days', label:'Jadwal Praktik' },
     ]},
     { group:'Medis', items:[
+      { key:'rekam-medis', icon:'fa-file-medical', label:'Rekam Medis' },
       { key:'stok-obat', icon:'fa-pills', label:'Stok Obat' },
       { key:'transaksi', icon:'fa-receipt', label:'Transaksi' },
       { key:'laporan', icon:'fa-chart-pie', label:'Laporan' },
@@ -16,6 +17,7 @@ const menus = {
     { group:'Dokter', items:[
       { key:'dashboard', icon:'fa-gauge', label:'Dashboard' },
       { key:'jadwal', icon:'fa-calendar-days', label:'Jadwal Praktik' },
+      { key:'booking', icon:'fa-list-ol', label:'Antrian' },
       { key:'data-pasien', icon:'fa-users', label:'Daftar Pasien' },
       { key:'rekam-medis', icon:'fa-file-medical', label:'Rekam Medis' },
       { key:'resep-obat', icon:'fa-prescription-bottle', label:'Resep Obat' },
@@ -27,6 +29,7 @@ const menus = {
       { key:'booking', icon:'fa-calendar-check', label:'Booking Jadwal' },
       { key:'riwayat', icon:'fa-clock-rotate-left', label:'Riwayat Kunjungan' },
       { key:'resep-obat', icon:'fa-prescription-bottle', label:'Resep Obat' },
+      { key:'transaksi', icon:'fa-qrcode', label:'Transaksi' },
     ]},
   ],
 };

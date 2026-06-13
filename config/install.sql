@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS booking (
     pasien_id   INT NOT NULL,
     dokter_id   INT NOT NULL,
     jadwal_id   INT,
+    no_antrian  VARCHAR(10),
     tanggal     DATE NOT NULL,
     keluhan     TEXT,
     status      VARCHAR(20) DEFAULT 'Menunggu',
@@ -135,7 +136,7 @@ CREATE TABLE IF NOT EXISTS booking (
 
 -- Users
 INSERT INTO users (email, password, role, nama) VALUES
-('admin@polibatam.ac.id',  'admin123',  'admin',  'Salwa Admin'),
+('admin@polibatam.ac.id',  'admin123',  'admin',  'Ahmad Admin'),
 ('dokter@polibatam.ac.id', 'dokter123', 'dokter', 'dr. Sarah Amalia'),
 ('pasien@polibatam.ac.id', 'pasien123', 'pasien', 'Andi Pratama');
 
@@ -181,6 +182,7 @@ INSERT INTO resep_detail (resep_id, obat_id, jumlah, aturan) VALUES
 -- Transaksi
 INSERT INTO transaksi (pasien_id, tanggal, layanan, metode, total, status) VALUES
 (1, '2024-10-15', 'Konsultasi Umum',    'BPJS',   0,      'Selesai'),
+(1, '2026-06-05', 'Pembayaran Layanan', 'QRIS Dummy', 25000, 'Menunggu'),
 (2, '2024-10-18', 'Periksa Gigi',       'Tunai',  150000, 'Selesai'),
 (3, '2024-10-20', 'Konsultasi Umum',    'Mandiri', 50000, 'Selesai'),
 (4, '2024-10-21', 'Pengambilan Obat',   'Tunai',  35000,  'Selesai');

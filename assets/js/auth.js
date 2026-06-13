@@ -12,9 +12,11 @@ async function initApp() {
   chip.textContent = info.label;
   chip.className = 'role-chip ' + info.chip;
   buildSidebar();
+  await reloadReferenceData();
   renderSection('dashboard');
+}
 
-  // Preload reference data (non-blocking, best-effort)
+async function reloadReferenceData() {
   try {
     const [pasien, dokter, obat] = await Promise.all([
       apiGet('pasien.php', { action: 'list' }),
@@ -31,4 +33,10 @@ async function initApp() {
 
 function logout() {
   window.location.href = 'logout.php';
+}
+
+function openTopbarInfo(title, message) {
+  openModal(title, `<p style="padding:8px 0 4px;line-height:1.6;color:var(--text-light);">${message}</p>`, [
+    {label:'Tutup', cls:'btn-secondary', action:'closeModal()'}
+  ]);
 }

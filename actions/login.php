@@ -2,48 +2,39 @@
 session_start();
 require_once __DIR__ . '/../config/db.php';
 
-// ── Quick login via tombol demo ──
+$authService = null;
+try {
+    $authService = new \Klinik\Services\AuthService(
+        new \Klinik\Repositories\UserRepository(getPDO())
+    );
+} catch (PDOException) {
+}
+
+function signInAndRedirect(array $user): void {
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['name'] = $user['name'];
+    header('Location: ../app.php');
+    exit;
+}
+
 if (!empty($_POST['quick_role'])) {
-    $roleMap = [
-        'admin'  => ['email' => 'admin@polibatam.ac.id'],
-        'dokter' => ['email' => 'dokter@polibatam.ac.id'],
-        'pasien' => ['email' => 'pasien@polibatam.ac.id'],
-    ];
-    $role = $_POST['quick_role'];
-    if (isset($roleMap[$role])) {
-        try {
-            $db = getPDO();
-            $st = $db->prepare('SELECT id, nama, role FROM users WHERE email = ?');
-            $st->execute([$roleMap[$role]['email']]);
-            $user = $st->fetch();
-            if ($user) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['role']    = $user['role'];
-                $_SESSION['name']    = $user['nama'];
-                header('Location: ../app.php');
-                exit;
-            }
-        } catch (PDOException $e) {
-            // DB not ready — fallback to hardcoded
-        }
+    $role = (string)$_POST['quick_role'];
+    $user = $authService?->quickLogin($role);
+    if (!$user) {
+        $fallback = [
+            'admin' => ['id' => null, 'name' => 'Ahmad Admin', 'role' => 'admin'],
+            'dokter' => ['id' => null, 'name' => 'dr. Sarah Amalia', 'role' => 'dokter'],
+            'pasien' => ['id' => null, 'name' => 'Andi Pratama', 'role' => 'pasien'],
+        ];
+        $user = $fallback[$role] ?? null;
     }
-    // Hardcoded fallback (when DB not installed yet)
-    $fallback = [
-        'admin'  => ['name' => 'Salwa Admin',      'role' => 'admin'],
-        'dokter' => ['name' => 'dr. Sarah Amalia', 'role' => 'dokter'],
-        'pasien' => ['name' => 'Andi Pratama',      'role' => 'pasien'],
-    ];
-    if (isset($fallback[$role])) {
-        $_SESSION['user_id'] = null;
-        $_SESSION['role']    = $fallback[$role]['role'];
-        $_SESSION['name']    = $fallback[$role]['name'];
-        header('Location: ../app.php');
-        exit;
+    if ($user) {
+        signInAndRedirect($user);
     }
 }
 
-// ── Login normal ──
-$email    = trim($_POST['email'] ?? '');
+$email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 
 if (!$email || !$password) {
@@ -52,29 +43,15 @@ if (!$email || !$password) {
     exit;
 }
 
-try {
-    $db = getPDO();
-    $st = $db->prepare('SELECT id, nama, role, password FROM users WHERE email = ?');
-    $st->execute([$email]);
-    $user = $st->fetch();
-
-    if ($user && $user['password'] === $password) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['role']    = $user['role'];
-        $_SESSION['name']    = $user['nama'];
-        header('Location: ../app.php');
-        exit;
-    }
-} catch (PDOException $e) {
-    // DB unavailable — check session-registered users as fallback
+$user = $authService?->login($email, $password, $_SESSION['reg_users'] ?? []);
+if (!$user) {
     $regUsers = $_SESSION['reg_users'] ?? [];
     if (isset($regUsers[$email]) && $regUsers[$email]['password'] === $password) {
-        $_SESSION['user_id'] = null;
-        $_SESSION['role']    = $regUsers[$email]['role'];
-        $_SESSION['name']    = $regUsers[$email]['name'];
-        header('Location: ../app.php');
-        exit;
+        $user = ['id' => null, 'name' => $regUsers[$email]['name'], 'role' => $regUsers[$email]['role']];
     }
+}
+if ($user) {
+    signInAndRedirect($user);
 }
 
 $_SESSION['flash_error'] = 'Email atau password salah.';

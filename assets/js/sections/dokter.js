@@ -123,6 +123,7 @@ async function saveFormDokter() {
     const res = await apiPost('dokter.php', _editDokterId ? 'update' : 'create', payload);
     showToast(res.msg, 'success');
     closeModal();
+    await reloadReferenceData();
     renderSection('data-dokter');
   } catch (e) { showToast(e.message, 'error'); }
 }
@@ -142,6 +143,7 @@ async function _konfirmasiHapusDokter(id) {
     const res = await apiPost('dokter.php', 'delete', { id });
     closeModal();
     showToast(res.msg, 'info');
+    await reloadReferenceData();
     renderSection('data-dokter');
   } catch (e) { showToast(e.message, 'error'); }
 }
