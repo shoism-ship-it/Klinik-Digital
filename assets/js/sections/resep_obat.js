@@ -1,5 +1,3 @@
-let _resepItems  = [];
-let _editResepId = null;
 let _resepData   = [];
 
 async function renderResepObat() {
@@ -9,43 +7,48 @@ async function renderResepObat() {
 }
 
 function _buildResepPage(data) {
-  const showPatient = currentRole !== 'pasien';
-  const showDoctor = currentRole === 'admin';
+  if (currentRole !== 'pasien') {
+    return `
+    <div class="section-header">
+      <div><h2>Data Obat Tersedia</h2><p>Daftar obat klinik sebagai referensi resep dokter</p></div>
+    </div>
+    ${_obatTersediaCard()}`;
+  }
+
   return `
   <div class="section-header">
-    <div><h2>Resep Obat</h2><p>Manajemen resep dan pengeluaran obat</p></div>
-    <div class="section-header-actions">
-      ${currentRole === 'dokter' || currentRole === 'admin'
-        ? `<button class="btn btn-primary" onclick="openFormResep()"><i class="fa-solid fa-plus"></i> Buat Resep Baru</button>`
-        : ''}
-    </div>
+    <div><h2>Resep Obat</h2><p>Resep dari dokter dan batas waktu penggunaannya</p></div>
   </div>
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-header"><h3><i class="fa-solid fa-list-ul"></i> Daftar Resep</h3></div>
+    <div class="card-header"><h3><i class="fa-solid fa-list-ul"></i> Resep Saya</h3></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>ID Resep</th>${showPatient ? '<th>Pasien</th>' : ''}${showDoctor ? '<th>Dokter</th>' : ''}<th>Tanggal</th><th>Jml Obat</th><th>Aksi</th></tr></thead>
+        <thead><tr><th>ID Resep</th><th>Tanggal</th><th>Berlaku Sampai</th><th>Status</th><th>Jml Obat</th><th>Aksi</th></tr></thead>
         <tbody>
           ${data.length === 0
-            ? `<tr><td colspan="${4 + (showPatient ? 1 : 0) + (showDoctor ? 1 : 0)}" style="text-align:center;color:var(--text-light);padding:20px;">Belum ada resep.</td></tr>`
-            : data.map(r=>`<tr>
+            ? `<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:20px;">Belum ada resep.</td></tr>`
+            : data.map(r=>{
+              const expired = isResepExpired(r.berlaku_sampai);
+              return `<tr>
                 <td><span class="badge badge-muted">${r.kode}</span></td>
-                ${showPatient ? `<td><strong>${r.nama_pasien}</strong></td>` : ''}
-                ${showDoctor ? `<td>${r.nama_dokter}</td>` : ''}
                 <td>${r.tanggal}</td>
+                <td>${r.berlaku_sampai || '-'}</td>
+                <td><span class="badge ${expired ? 'badge-danger' : 'badge-success'}">${expired ? 'Kadaluarsa' : 'Berlaku'}</span></td>
                 <td><span class="badge badge-info">${r.detail.length} obat</span></td>
                 <td>
                   <button class="btn btn-xs btn-secondary" onclick="detailResep(${r.id})"><i class="fa-solid fa-eye"></i> Detail</button>
-                  ${currentRole !== 'pasien'
-                    ? `<button class="btn btn-xs btn-outline" onclick="openFormResep(${r.id})"><i class="fa-solid fa-pen"></i></button>
-                       <button class="btn btn-xs btn-danger" onclick="hapusResep(${r.id},'${r.kode}')"><i class="fa-solid fa-trash"></i></button>`
-                    : ''}
                 </td>
-              </tr>`).join('')}
+              </tr>`;
+            }).join('')}
         </tbody>
       </table>
     </div>
   </div>
+  ${_obatTersediaCard()}`;
+}
+
+function _obatTersediaCard() {
+  return `
   <div class="card">
     <div class="card-header"><h3><i class="fa-solid fa-capsules"></i> Daftar Obat Tersedia</h3></div>
     <div class="table-wrap">
@@ -64,151 +67,6 @@ function _buildResepPage(data) {
   </div>`;
 }
 
-function openFormResep(id = null) {
-  _editResepId = id;
-  const resep = id ? _resepData.find(x => x.id === id) : null;
-  _resepItems = resep?.detail?.length
-    ? resep.detail.map(d => ({ obat_id: d.obat_id, jumlah: d.jumlah, aturan: d.aturan || '' }))
-    : [{ obat_id: _obatList[0]?.id||'', jumlah:1, aturan:'' }];
-  _renderFormResep(resep || null);
-}
-
-function _renderFormResep(resep = null) {
-  const today = new Date().toISOString().split('T')[0];
-  const pasienId = resep?.pasien_id || _pasienList[0]?.id || '';
-  let dokterId = resep?.dokter_id || _dokterList[0]?.id || '';
-  if (!resep && currentRole === 'dokter') {
-    const d = currentDokter();
-    if (d) dokterId = d.id;
-  }
-  const tanggal = resep?.tanggal || today;
-  const catatan = resep?.catatan || '';
-  const pasienOpts = _pasienList.map(p => `<option value="${p.id}" ${String(p.id)===String(pasienId)?'selected':''}>${p.nama}</option>`).join('');
-  const dokterOpts = _dokterList.map(d => `<option value="${d.id}" ${String(d.id)===String(dokterId)?'selected':''}>${d.nama}</option>`).join('');
-  openModal(resep ? 'Edit Resep' : 'Buat Resep Baru', `
-    <div class="resep-section-title"><i class="fa-solid fa-file-prescription"></i> A. DATA RESEP</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Pasien *</label>
-        <select id="frm-rx-pasien" class="form-control">${pasienOpts}</select>
-      </div>
-      ${currentRole === 'admin' ? `<div class="form-group">
-        <label class="form-label">Dokter *</label>
-        <select id="frm-rx-dokter" class="form-control">${dokterOpts}</select>
-      </div>` : `<div class="form-group">
-        <label class="form-label">Dokter</label>
-        <input type="text" class="form-control" value="${currentDokter()?.nama || currentName}" disabled>
-        <input type="hidden" id="frm-rx-dokter" value="${dokterId}">
-      </div>`}
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Tanggal</label>
-        <input type="date" id="frm-rx-tgl" class="form-control" value="${tanggal}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Catatan</label>
-        <input type="text" id="frm-rx-catatan" class="form-control" placeholder="Catatan umum resep..." value="${catatan}">
-      </div>
-    </div>
-    <div class="resep-section-title" style="margin-top:4px;"><i class="fa-solid fa-capsules"></i> B. DETAIL OBAT</div>
-    <div id="resep-items-list">
-      ${_resepItems.map((item, i) => _resepItemHtml(item, i)).join('')}
-    </div>
-    <button class="btn btn-outline btn-sm" style="margin-top:6px;" onclick="tambahItemResep()">
-      <i class="fa-solid fa-plus"></i> Tambah Obat
-    </button>
-  `, [
-    {label:'Batal', cls:'btn-secondary', action:'closeModal()'},
-    {label:'<i class="fa-solid fa-save"></i> Simpan Resep', cls:'btn-primary', action:'saveFormResep()'}
-  ], true);
-}
-
-function _resepItemHtml(item, i) {
-  const obatOpts = _obatList.map(o => `<option value="${o.id}" ${item.obat_id==o.id?'selected':''}>${o.nama} (stok:${o.stok})</option>`).join('');
-  return `
-  <div class="resep-item-block" id="resep-item-${i}" style="background:var(--bg);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-size:11px;font-weight:700;color:var(--text-light);">OBAT ${i+1}</span>
-      ${i > 0 ? `<button class="btn btn-xs btn-danger" onclick="hapusItemResep(${i})"><i class="fa-solid fa-xmark"></i></button>` : ''}
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Nama Obat</label>
-        <select id="frm-rx-obat-${i}" class="form-control">${obatOpts}</select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Jumlah</label>
-        <input type="number" id="frm-rx-jml-${i}" class="form-control" value="${item.jumlah||1}" min="1">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Aturan Pakai</label>
-      <input type="text" id="frm-rx-aturan-${i}" class="form-control" placeholder="3x1 sesudah makan" value="${item.aturan||''}">
-    </div>
-  </div>`;
-}
-
-function _syncResepItems() {
-  _resepItems.forEach((_, i) => {
-    _resepItems[i].obat_id = document.getElementById(`frm-rx-obat-${i}`)?.value || '';
-    _resepItems[i].jumlah  = parseInt(document.getElementById(`frm-rx-jml-${i}`)?.value)||1;
-    _resepItems[i].aturan  = document.getElementById(`frm-rx-aturan-${i}`)?.value||'';
-  });
-}
-
-function tambahItemResep() {
-  _syncResepItems();
-  _resepItems.push({ obat_id: _obatList[0]?.id||'', jumlah:1, aturan:'' });
-  const listEl = document.getElementById('resep-items-list');
-  if (listEl) listEl.innerHTML = _resepItems.map((item, i) => _resepItemHtml(item, i)).join('');
-}
-
-function hapusItemResep(i) {
-  _syncResepItems();
-  _resepItems.splice(i, 1);
-  const listEl = document.getElementById('resep-items-list');
-  if (listEl) listEl.innerHTML = _resepItems.map((item, idx) => _resepItemHtml(item, idx)).join('');
-}
-
-async function saveFormResep() {
-  _syncResepItems();
-  const pasien_id = val('frm-rx-pasien');
-  const dokter_id = val('frm-rx-dokter');
-  const tanggal   = val('frm-rx-tgl');
-  const catatan   = val('frm-rx-catatan');
-  const detail    = _resepItems.filter(x => x.obat_id);
-
-  if (!pasien_id) { showToast('Pilih pasien!', 'error'); return; }
-  if (!dokter_id) { showToast('Pilih dokter!', 'error'); return; }
-  if (!detail.length) { showToast('Tambahkan minimal 1 obat!', 'error'); return; }
-
-  try {
-    const res = await apiPost('resep.php', _editResepId ? 'update' : 'create', { id: _editResepId || undefined, pasien_id, dokter_id, tanggal, catatan, detail });
-    closeModal();
-    showToast(res.msg, 'success');
-    renderSection('resep-obat');
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-function hapusResep(id, kode) {
-  openModal('Hapus Resep', `
-    <p style="text-align:center;padding:12px 0;">Yakin hapus resep <strong>${kode}</strong>?</p>
-  `, [
-    {label:'Batal', cls:'btn-secondary', action:'closeModal()'},
-    {label:'<i class="fa-solid fa-trash"></i> Hapus', cls:'btn-danger', action:`_konfirmasiHapusResep(${id})`}
-  ]);
-}
-
-async function _konfirmasiHapusResep(id) {
-  try {
-    const res = await apiPost('resep.php', 'delete', { id });
-    closeModal();
-    showToast(res.msg, 'info');
-    renderSection('resep-obat');
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
 function detailResep(id) {
   const r = _resepData.find(x => x.id === id);
   if (!r) return;
@@ -217,6 +75,8 @@ function detailResep(id) {
     <div class="grid-2" style="margin-bottom:14px;">
       <div class="detail-field"><label>ID Resep</label><div class="val">${r.kode}</div></div>
       <div class="detail-field"><label>Tanggal</label><div class="val">${r.tanggal}</div></div>
+      <div class="detail-field"><label>Berlaku Sampai</label><div class="val">${r.berlaku_sampai || '-'}</div></div>
+      <div class="detail-field"><label>Status</label><div class="val"><span class="badge ${isResepExpired(r.berlaku_sampai) ? 'badge-danger' : 'badge-success'}">${isResepExpired(r.berlaku_sampai) ? 'Kadaluarsa' : 'Berlaku'}</span></div></div>
       ${currentRole !== 'pasien' ? `<div class="detail-field"><label>Pasien</label><div class="val">${r.nama_pasien}</div></div>` : ''}
       ${currentRole === 'admin' ? `<div class="detail-field"><label>Dokter</label><div class="val">${r.nama_dokter}</div></div>` : ''}
     </div>
@@ -232,4 +92,9 @@ function detailResep(id) {
       </div>
     </div>`).join('')}
   `, [{label:'Tutup', cls:'btn-secondary', action:'closeModal()'}], true);
+}
+
+function isResepExpired(value) {
+  if (!value) return false;
+  return new Date(String(value).replace(' ', 'T')).getTime() < Date.now();
 }

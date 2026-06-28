@@ -9,8 +9,8 @@ class DokterRepository extends BaseRepository
         $sql = 'SELECT * FROM dokter';
         $params = [];
         if ($q !== '') {
-            $sql .= ' WHERE nama LIKE ? OR spesialis LIKE ?';
-            $params = ["%$q%", "%$q%"];
+            $sql .= ' WHERE id = ?';
+            $params = [$this->numericId($q)];
         }
         $sql .= ' ORDER BY id';
 

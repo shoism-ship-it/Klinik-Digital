@@ -9,8 +9,8 @@ class ObatRepository extends BaseRepository
         $sql = 'SELECT * FROM obat';
         $params = [];
         if ($q !== '') {
-            $sql .= ' WHERE nama LIKE ? OR kategori LIKE ?';
-            $params = ["%$q%", "%$q%"];
+            $sql .= ' WHERE id = ?';
+            $params = [$this->numericId($q)];
         }
         $sql .= ' ORDER BY id';
 
