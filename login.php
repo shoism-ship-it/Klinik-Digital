@@ -48,24 +48,25 @@ include 'includes/head.php';
 
       <form method="post" action="actions/login.php">
         <div class="form-group">
-          <label class="form-label">Email / NIM / NIP</label>
+          <label class="form-label">Email</label>
           <div class="input-wrap">
             <i class="pre fa-solid fa-user"></i>
-            <input type="text" name="email" class="form-control" placeholder="Masukkan email atau ID Anda" value="admin@polibatam.ac.id">
+            <input type="email" name="email" class="form-control" placeholder="Masukkan email Anda">
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <div class="input-wrap">
+          <div class="input-wrap password-wrap">
             <i class="pre fa-solid fa-lock"></i>
-            <input type="password" name="password" class="form-control" placeholder="Password Anda" value="admin123">
+            <input type="password" name="password" class="form-control" placeholder="Password Anda">
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility(this)" aria-label="Lihat password"><i class="fa-solid fa-eye"></i></button>
           </div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;">
-          <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;color:var(--text-light);">
+        <div class="login-options">
+          <label>
             <input type="checkbox" checked> Ingat saya
           </label>
-          <button type="button" class="link-btn" onclick="alert('Silakan hubungi admin klinik untuk reset password demo.')">Lupa password?</button>
+          <a href="forgot_password.php" class="link-btn">Lupa password?</a>
         </div>
 
         <button type="submit" class="btn btn-primary btn-w-full" style="margin-bottom:12px;">
@@ -73,15 +74,23 @@ include 'includes/head.php';
         </button>
       </form>
 
-      <!-- Tombol Demo Cepat -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
+      <!-- Akses cepat untuk presentasi -->
+      <div class="quick-login-grid quick-login-grid-wide">
         <form method="post" action="actions/login.php">
           <input type="hidden" name="quick_role" value="admin">
           <button type="submit" class="btn btn-primary btn-w-full">Admin</button>
         </form>
         <form method="post" action="actions/login.php">
           <input type="hidden" name="quick_role" value="dokter">
-          <button type="submit" class="btn btn-outline btn-w-full">Dokter</button>
+          <button type="submit" class="btn btn-outline btn-w-full">dr. Sarah</button>
+        </form>
+        <form method="post" action="actions/login.php">
+          <input type="hidden" name="quick_role" value="dokter2">
+          <button type="submit" class="btn btn-outline btn-w-full">dr. Hendra</button>
+        </form>
+        <form method="post" action="actions/login.php">
+          <input type="hidden" name="quick_role" value="dokter3">
+          <button type="submit" class="btn btn-outline btn-w-full">dr. Putri</button>
         </form>
         <form method="post" action="actions/login.php">
           <input type="hidden" name="quick_role" value="pasien">
@@ -97,5 +106,6 @@ include 'includes/head.php';
   </div>
 </div>
 
+<script src="assets/js/password_toggle.js"></script>
 </body>
 </html>

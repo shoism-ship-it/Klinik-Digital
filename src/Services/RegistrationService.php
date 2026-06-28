@@ -13,13 +13,10 @@ class RegistrationService
 
     public function normalizeRole(string $role): array
     {
-        $roleRaw = strtolower($role ?: 'pasien');
-        $roleMap = ['mahasiswa'=>'pasien','dosen'=>'pasien','staff'=>'pasien','pasien'=>'pasien','dokter'=>'dokter','admin'=>'admin'];
-
         return [
-            'raw' => $roleRaw,
-            'key' => $roleMap[$roleRaw] ?? 'pasien',
-            'label' => ucfirst($roleRaw),
+            'raw' => 'mahasiswa',
+            'key' => 'pasien',
+            'label' => 'Mahasiswa',
         ];
     }
 

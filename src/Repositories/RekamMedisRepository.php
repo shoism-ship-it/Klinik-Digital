@@ -22,8 +22,8 @@ class RekamMedisRepository extends BaseRepository
             $params[] = $dokterId;
         }
         if ($q !== '') {
-            $where[] = '(p.nama LIKE ? OR d.nama LIKE ? OR rm.diagnosa LIKE ?)';
-            array_push($params, "%$q%", "%$q%", "%$q%");
+            $where[] = 'rm.id = ?';
+            $params[] = $this->numericId($q);
         }
         if ($where) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
@@ -99,6 +99,24 @@ class RekamMedisRepository extends BaseRepository
     private function withCode(array $row): array
     {
         $row['kode'] = $this->code('RM', (int)$row['id']);
+        $row['resep'] = $this->resepFor((int)$row['id']);
         return $row;
+    }
+
+    private function resepFor(int $rekamMedisId): ?array
+    {
+        $resep = $this->fetchOne('SELECT * FROM resep WHERE rekam_medis_id = ? ORDER BY id DESC LIMIT 1', [$rekamMedisId]);
+        if (!$resep) {
+            return null;
+        }
+        $resep['kode'] = $this->code('R', (int)$resep['id']);
+        $resep['detail'] = $this->fetchAll(
+            'SELECT rd.*, COALESCE(NULLIF(rd.nama_obat, ""), o.nama, "-") AS nama_obat
+             FROM resep_detail rd
+             LEFT JOIN obat o ON rd.obat_id = o.id
+             WHERE rd.resep_id = ?',
+            [(int)$resep['id']]
+        );
+        return $resep;
     }
 }

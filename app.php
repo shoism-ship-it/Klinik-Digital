@@ -16,6 +16,7 @@ include 'includes/head.php';
 <body class="role-theme-<?= htmlspecialchars($role) ?>">
 
 <div class="app-page">
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileSidebar()" aria-hidden="true"></div>
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
@@ -25,6 +26,9 @@ include 'includes/head.php';
         <strong>Klinik Polibatam</strong>
         <span>SIM Klinik Kampus</span>
       </div>
+      <button type="button" class="sidebar-close" onclick="closeMobileSidebar()" aria-label="Tutup menu">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
     <nav class="sidebar-nav" id="sidebar-nav"></nav>
     <div class="sidebar-user">
@@ -40,14 +44,19 @@ include 'includes/head.php';
   <!-- MAIN -->
   <div class="main-content">
     <div class="topbar">
-      <div class="topbar-title">
-        <h2 id="topbar-title">Dashboard</h2>
-        <p id="topbar-sub">Selamat datang di sistem informasi klinik</p>
+      <div class="topbar-left">
+        <button type="button" class="menu-toggle" onclick="toggleMobileSidebar()" aria-label="Buka menu navigasi" aria-controls="sidebar">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="topbar-title">
+          <h2 id="topbar-title">Dashboard</h2>
+          <p id="topbar-sub">Selamat datang di sistem informasi klinik</p>
+        </div>
       </div>
       <div class="topbar-right">
         <span class="role-chip role-<?= $role ?>" id="topbar-role-chip"><?= ucfirst($role) ?></span>
-        <button type="button" class="topbar-badge" onclick="openTopbarInfo('Notifikasi', 'Belum ada notifikasi baru. Semua aktivitas klinik akan muncul di sini.')"><i class="fa-solid fa-bell"></i><div class="dot"></div></button>
-        <button type="button" class="topbar-badge" onclick="openTopbarInfo('Pengaturan', 'Pengaturan akun dan preferensi sistem siap dikembangkan dari menu ini.')"><i class="fa-solid fa-gear"></i></button>
+        <button type="button" class="topbar-badge" onclick="openNotifications()"><i class="fa-solid fa-bell"></i><div class="dot"></div></button>
+        <button type="button" class="topbar-badge" onclick="openProfileSettings()"><i class="fa-solid fa-gear"></i></button>
       </div>
     </div>
     <div class="content-body" id="content-body"></div>

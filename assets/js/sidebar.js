@@ -18,7 +18,6 @@ const menus = {
       { key:'dashboard', icon:'fa-gauge', label:'Dashboard' },
       { key:'jadwal', icon:'fa-calendar-days', label:'Jadwal Praktik' },
       { key:'booking', icon:'fa-list-ol', label:'Antrian' },
-      { key:'data-pasien', icon:'fa-users', label:'Daftar Pasien' },
       { key:'rekam-medis', icon:'fa-file-medical', label:'Rekam Medis' },
       { key:'resep-obat', icon:'fa-prescription-bottle', label:'Resep Obat' },
     ]},
@@ -40,9 +39,21 @@ function buildSidebar() {
   nav.innerHTML = groups.map(g => `
     <div class="nav-group-label">${g.group}</div>
     ${g.items.map(item => `
-      <div class="nav-item ${item.key === activeMenu ? 'active' : ''}" id="nav-${item.key}" onclick="renderSection('${item.key}')">
+      <div class="nav-item ${item.key === activeMenu ? 'active' : ''}" id="nav-${item.key}" onclick="closeMobileSidebar(); renderSection('${item.key}')">
         <i class="fa-solid ${item.icon}"></i> ${item.label}
       </div>
     `).join('')}
   `).join('');
 }
+
+function toggleMobileSidebar() {
+  document.body.classList.toggle('sidebar-open');
+}
+
+function closeMobileSidebar() {
+  document.body.classList.remove('sidebar-open');
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeMobileSidebar();
+});

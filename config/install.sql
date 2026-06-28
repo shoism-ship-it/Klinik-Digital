@@ -1,11 +1,5 @@
 -- Klinik Digital Polibatam — Schema + Seed Data
--- Run: mysql -u rCREATE TABLE pasien (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nama VARCHAR(100),
-    email VARCHAR(100),
-    no_hp VARCHAR(20),
-    alamat TEXT
-);oot -p < config/install.sql
+-- Run: mysql -u root -p < config/install.sql
 
 CREATE DATABASE IF NOT EXISTS klinik_polibatam CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE klinik_polibatam;
@@ -81,6 +75,7 @@ CREATE TABLE IF NOT EXISTS resep (
     pasien_id     INT NOT NULL,
     dokter_id     INT NOT NULL,
     tanggal       DATE NOT NULL,
+    berlaku_sampai DATETIME NULL,
     catatan       TEXT,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (rekam_medis_id) REFERENCES rekam_medis(id) ON DELETE CASCADE,
@@ -91,11 +86,12 @@ CREATE TABLE IF NOT EXISTS resep (
 CREATE TABLE IF NOT EXISTS resep_detail (
     id       INT AUTO_INCREMENT PRIMARY KEY,
     resep_id INT NOT NULL,
-    obat_id  INT NOT NULL,
+    obat_id  INT NULL,
+    nama_obat VARCHAR(120) NOT NULL DEFAULT '',
     jumlah   INT NOT NULL DEFAULT 1,
     aturan   VARCHAR(80),
     FOREIGN KEY (resep_id) REFERENCES resep(id) ON DELETE CASCADE,
-    FOREIGN KEY (obat_id)  REFERENCES obat(id)  ON DELETE CASCADE
+    FOREIGN KEY (obat_id)  REFERENCES obat(id)  ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS transaksi (
@@ -116,7 +112,7 @@ CREATE TABLE IF NOT EXISTS jadwal (
     hari      VARCHAR(15) NOT NULL,
     jam_mulai TIME NOT NULL,
     jam_selesai TIME NOT NULL,
-    kuota     INT DEFAULT 10,
+    kuota     INT DEFAULT 5,
     status    VARCHAR(20) DEFAULT 'Aktif',
     FOREIGN KEY (dokter_id) REFERENCES dokter(id) ON DELETE CASCADE
 );
@@ -144,14 +140,16 @@ CREATE TABLE IF NOT EXISTS booking (
 INSERT INTO users (email, password, role, nama) VALUES
 ('admin@polibatam.ac.id',  'admin123',  'admin',  'Ahmad Admin'),
 ('dokter@polibatam.ac.id', 'dokter123', 'dokter', 'dr. Sarah Amalia'),
+('hendra@polibatam.ac.id', 'dokter123', 'dokter', 'dr. Hendra Kusuma'),
+('putri@polibatam.ac.id',  'dokter123', 'dokter', 'dr. Putri Maharani'),
 ('pasien@polibatam.ac.id', 'pasien123', 'pasien', 'Andi Pratama');
 
 -- Pasien
 INSERT INTO pasien (user_id, nama, nim, prodi, tgl_lahir, gender, hp, role, status) VALUES
-(3, 'Andi Pratama',     'NIM4311901001', 'Teknik Informatika', '2002-01-12', 'L', '08123456789', 'Mahasiswa', 'Aktif'),
-(NULL, 'Siti Rahma',    'NIM4311901002', 'Sistem Informasi',   '2001-05-22', 'P', '08234567890', 'Mahasiswa', 'Aktif'),
-(NULL, 'Budi Santoso',  'NIP198501012010', 'Teknik Elektro',   '1985-01-01', 'L', '08345678901', 'Dosen',    'Aktif'),
-(NULL, 'Dewi Lestari',  'NIM4311901004', 'Manajemen Bisnis',   '2003-09-15', 'P', '08456789012', 'Mahasiswa', 'Aktif'),
+(5, 'Andi Pratama',     'NIM4311901001', 'Teknik Informatika', '2002-01-12', 'L', '08123456789', 'Mahasiswa', 'Aktif'),
+(NULL, 'Siti Rahma',    'NIM4311901002', 'Teknik Elektro',   '2001-05-22', 'P', '08234567890', 'Mahasiswa', 'Aktif'),
+(NULL, 'Budi Santoso',  'NIM4311901003', 'Teknik Elektro',   '2002-03-08', 'L', '08345678901', 'Mahasiswa', 'Aktif'),
+(NULL, 'Dewi Lestari',  'NIM4311901004', 'Manajemen dan Bisnis',   '2003-09-15', 'P', '08456789012', 'Mahasiswa', 'Aktif'),
 (NULL, 'Rizky Firmansyah','NIM4311901005','Teknik Informatika','2002-11-30', 'L', '08567890123', 'Mahasiswa', 'Aktif');
 
 -- Dokter
@@ -176,29 +174,29 @@ INSERT INTO rekam_medis (pasien_id, dokter_id, tanggal, keluhan, diagnosa, tinda
 (3, 1, '2024-10-20', 'Batuk pilek sudah 3 hari',       'ISPA ringan', 'Pemberian antibitiotik dan vitamin', '130/85', 75.0);
 
 -- Resep
-INSERT INTO resep (rekam_medis_id, pasien_id, dokter_id, tanggal, catatan) VALUES
-(1, 1, 1, '2024-10-15', 'Diminum sesudah makan'),
-(2, 2, 2, '2024-10-18', 'Gunakan obat kumur juga');
+INSERT INTO resep (rekam_medis_id, pasien_id, dokter_id, tanggal, berlaku_sampai, catatan) VALUES
+(1, 1, 1, '2024-10-15', '2024-10-15 23:59:59', 'Diminum sesudah makan'),
+(2, 2, 2, '2024-10-18', '2024-10-18 23:59:59', 'Gunakan obat kumur juga');
 
-INSERT INTO resep_detail (resep_id, obat_id, jumlah, aturan) VALUES
-(1, 1, 10, '3x1'),
-(1, 3, 10, '1x1'),
-(2, 4, 6,  '3x1');
+INSERT INTO resep_detail (resep_id, obat_id, nama_obat, jumlah, aturan) VALUES
+(1, 1, 'Paracetamol 500mg', 10, '3x1'),
+(1, 3, 'Vitamin C 500mg', 10, '1x1'),
+(2, 4, 'Antasida Doen', 6,  '3x1');
 
 -- Transaksi
 INSERT INTO transaksi (pasien_id, tanggal, layanan, metode, total, status) VALUES
 (1, '2024-10-15', 'Konsultasi Umum',    'BPJS',   0,      'Selesai'),
-(1, '2026-06-05', 'Pembayaran Layanan', 'QRIS Dummy', 25000, 'Menunggu'),
+(1, '2026-06-05', 'Administrasi Layanan', 'QRIS Simulasi', 25000, 'Menunggu'),
 (2, '2024-10-18', 'Periksa Gigi',       'Tunai',  150000, 'Selesai'),
 (3, '2024-10-20', 'Konsultasi Umum',    'Mandiri', 50000, 'Selesai'),
 (4, '2024-10-21', 'Pengambilan Obat',   'Tunai',  35000,  'Selesai');
 
 -- Jadwal
 INSERT INTO jadwal (dokter_id, hari, jam_mulai, jam_selesai, kuota, status) VALUES
-(1, 'Senin',   '08:00', '12:00', 10, 'Aktif'),
-(1, 'Rabu',    '08:00', '12:00', 10, 'Aktif'),
-(1, 'Jumat',   '08:00', '12:00', 10, 'Aktif'),
-(2, 'Selasa',  '13:00', '17:00', 8,  'Aktif'),
-(2, 'Kamis',   '13:00', '17:00', 8,  'Aktif'),
-(3, 'Senin',   '09:00', '13:00', 10, 'Aktif'),
-(3, 'Kamis',   '09:00', '13:00', 10, 'Aktif');
+(1, 'Senin',   '08:00', '12:00', 5, 'Aktif'),
+(1, 'Rabu',    '08:00', '12:00', 5, 'Aktif'),
+(1, 'Jumat',   '08:00', '12:00', 5, 'Aktif'),
+(2, 'Selasa',  '13:00', '17:00', 5, 'Aktif'),
+(2, 'Kamis',   '13:00', '17:00', 5, 'Aktif'),
+(3, 'Senin',   '09:00', '13:00', 5, 'Aktif'),
+(3, 'Kamis',   '09:00', '13:00', 5, 'Aktif');

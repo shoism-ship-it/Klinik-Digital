@@ -25,6 +25,8 @@ if (!empty($_POST['quick_role'])) {
         $fallback = [
             'admin' => ['id' => null, 'name' => 'Ahmad Admin', 'role' => 'admin'],
             'dokter' => ['id' => null, 'name' => 'dr. Sarah Amalia', 'role' => 'dokter'],
+            'dokter2' => ['id' => null, 'name' => 'dr. Hendra Kusuma', 'role' => 'dokter'],
+            'dokter3' => ['id' => null, 'name' => 'dr. Putri Maharani', 'role' => 'dokter'],
             'pasien' => ['id' => null, 'name' => 'Andi Pratama', 'role' => 'pasien'],
         ];
         $user = $fallback[$role] ?? null;

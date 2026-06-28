@@ -14,6 +14,11 @@ async function renderLaporan() {
     return row ? parseInt(row.jumlah) : 0;
   });
   const maxMonthly = Math.max(...monthly, 1);
+  const incomeMonthly = Array.from({ length: 12 }, (_, i) => {
+    const row = (laporan.pendapatan_per_bulan || []).find(x => parseInt(x.bulan) === i + 1);
+    return row ? parseInt(row.total) : 0;
+  });
+  const maxIncome = Math.max(...incomeMonthly, 1);
   const totalDiagnosa = (laporan.diagnosa || []).reduce((s, x) => s + (parseInt(x.jumlah) || 0), 0) || 1;
   body.innerHTML = `
   <div class="section-header">
@@ -29,7 +34,7 @@ async function renderLaporan() {
     <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-users"></i></div><div><div class="stat-val">${stats.total_pasien??'-'}</div><div class="stat-lbl">Total Pasien</div></div></div>
     <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-stethoscope"></i></div><div><div class="stat-val">${stats.total_rekam??'-'}</div><div class="stat-lbl">Kunjungan Bulan Ini</div></div></div>
     <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-user-doctor"></i></div><div><div class="stat-val">${stats.total_dokter??'-'}</div><div class="stat-lbl">Dokter Aktif</div></div></div>
-    <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-money-bill"></i></div><div><div class="stat-val">${fmtRupiah(stats.total_transaksi||0)}</div><div class="stat-lbl">Pendapatan Bulan Ini</div></div></div>
+    <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-money-bill"></i></div><div><div class="stat-val">${fmtRupiah(laporan.total_pendapatan||0)}</div><div class="stat-lbl">Pendapatan ${selectedYear}</div></div></div>
   </div>
   <div class="grid-2" style="margin-top:16px;">
     <div class="card">
@@ -60,19 +65,15 @@ async function renderLaporan() {
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><h3><i class="fa-solid fa-pills"></i> Status Stok Kritis</h3></div>
+      <div class="card-header"><h3><i class="fa-solid fa-money-bill-trend-up"></i> Total Pendapatan Per Bulan</h3></div>
       <div class="card-body">
-        <div style="font-size:32px;font-weight:700;color:${(stats.stok_menipis||0)>0?'var(--danger)':'var(--success)'};padding:12px 0;">${stats.stok_menipis??0}</div>
-        <p style="color:var(--text-light);font-size:13px;">Jenis obat dengan stok di bawah 20 unit</p>
-        <button class="btn btn-outline btn-sm" onclick="renderSection('stok-obat')"><i class="fa-solid fa-arrow-right"></i> Kelola Stok</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><h3><i class="fa-solid fa-calendar-check"></i> Booking Menunggu</h3></div>
-      <div class="card-body">
-        <div style="font-size:32px;font-weight:700;color:var(--warning);padding:12px 0;">${stats.booking_menunggu??0}</div>
-        <p style="color:var(--text-light);font-size:13px;">Booking pasien yang menunggu konfirmasi</p>
-        <button class="btn btn-outline btn-sm" onclick="renderSection('booking')"><i class="fa-solid fa-arrow-right"></i> Kelola Booking</button>
+        <div class="bar-chart">
+          ${incomeMonthly.map(v=>`<div class="bar" style="height:${Math.max(8, Math.round((v / maxIncome) * 100))}%" data-val="${fmtRupiah(v)}"></div>`).join('')}
+        </div>
+        <div class="bar-labels">
+          ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'].map(m=>`<span>${m}</span>`).join('')}
+        </div>
+        <div style="margin-top:14px;font-size:22px;font-weight:700;color:var(--c1);">${fmtRupiah(laporan.total_pendapatan || 0)}</div>
       </div>
     </div>
   </div>`;
@@ -86,6 +87,8 @@ async function exportLaporanCsv() {
       ['Jenis', 'Periode', 'Jumlah'],
       ...(laporan.kunjungan_per_bulan || []).map(r => ['Kunjungan', `Bulan ${r.bulan}`, r.jumlah]),
       ...(laporan.diagnosa || []).map(r => ['Diagnosa', r.diagnosa, r.jumlah]),
+      ...(laporan.pendapatan_per_bulan || []).map(r => ['Pendapatan', `Bulan ${r.bulan}`, r.total]),
+      ['Total Pendapatan', String(year), laporan.total_pendapatan || 0],
     ];
     const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

@@ -1,9 +1,10 @@
 let _editRmId = null;
 let _rmData   = [];
+let _rmResepItems = [];
 
 async function renderRekamMedis() {
   const body = document.getElementById('content-body');
-  _rmData = await apiGet('rekam_medis.php', { action: 'list' });
+  _rmData = [];
   body.innerHTML = _buildRmPage(_rmData);
 }
 
@@ -14,7 +15,7 @@ function _buildRmPage(data) {
     <div><h2>Rekam Medis</h2><p>Input dan riwayat rekam medis pasien</p></div>
     <div class="section-header-actions">
       <div class="search-bar" style="width:200px;"><i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Cari rekam medis..." oninput="filterRm(this.value)">
+        <input type="text" placeholder="Cari ID rekam medis..." oninput="filterRm(this.value)">
       </div>
       <button class="btn btn-primary" onclick="openFormRekamMedis()"><i class="fa-solid fa-plus"></i> Input Rekam Medis</button>
     </div>
@@ -23,7 +24,7 @@ function _buildRmPage(data) {
     <div class="table-wrap">
       <table>
         <thead><tr><th>ID</th><th>Pasien</th>${showDoctor ? '<th>Dokter</th>' : ''}<th>Tanggal</th><th>Diagnosa</th><th>Aksi</th></tr></thead>
-        <tbody id="tbody-rm">${_rowsRm(data)}</tbody>
+        <tbody id="tbody-rm">${_emptyRmRow('Masukkan No ID rekam medis untuk menampilkan data.')}</tbody>
       </table>
     </div>
   </div>`;
@@ -31,7 +32,7 @@ function _buildRmPage(data) {
 
 function _rowsRm(data) {
   const showDoctor = currentRole === 'admin';
-  if (!data.length) return `<tr><td colspan="${showDoctor ? 6 : 5}" style="text-align:center;color:var(--text-light);padding:20px;">Belum ada rekam medis.</td></tr>`;
+  if (!data.length) return _emptyRmRow('Data rekam medis tidak ditemukan. Periksa No ID yang dimasukkan.');
   return data.map(r => `<tr>
     <td><span class="badge badge-muted">${r.kode}</span></td>
     <td><strong>${r.nama_pasien}</strong></td>
@@ -46,10 +47,22 @@ function _rowsRm(data) {
   </tr>`).join('');
 }
 
+function _emptyRmRow(message) {
+  const showDoctor = currentRole === 'admin';
+  return `<tr><td colspan="${showDoctor ? 6 : 5}" style="text-align:center;color:var(--text-light);padding:20px;">${message}</td></tr>`;
+}
+
 async function filterRm(q) {
+  const tbody = document.getElementById('tbody-rm');
+  const id = q.trim();
+  if (!id) {
+    _rmData = [];
+    if (tbody) tbody.innerHTML = _emptyRmRow('Masukkan No ID rekam medis untuk menampilkan data.');
+    return;
+  }
   try {
     const data = await apiGet('rekam_medis.php', { action: 'list', q });
-    const tbody = document.getElementById('tbody-rm');
+    _rmData = data;
     if (tbody) tbody.innerHTML = _rowsRm(data);
   } catch (_) {}
 }
@@ -60,6 +73,7 @@ async function openFormRekamMedis(id = null) {
   if (id) {
     try { r = await apiGet('rekam_medis.php', { action: 'get', id }); } catch (_) {}
   }
+  _rmResepItems = [{ nama_obat:'', jumlah:1, aturan:'' }];
 
   const pasienOpts = _pasienList.map(p => `<option value="${p.id}" ${r.pasien_id==p.id?'selected':''}>${p.nama}</option>`).join('');
   const dokterLogin = currentDokter();
@@ -109,6 +123,23 @@ async function openFormRekamMedis(id = null) {
       <label class="form-label">Berat Badan (kg)</label>
       <input type="number" step="0.1" id="frm-rm-bb" class="form-control" value="${r.berat_badan||''}">
     </div>
+    ${!id ? `
+    <div class="separator"></div>
+    <div class="resep-section-title"><i class="fa-solid fa-file-prescription"></i> Resep Obat</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Berlaku Sampai</label>
+        <input type="datetime-local" id="frm-rm-berlaku" class="form-control" value="${defaultResepExpiry()}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catatan Resep</label>
+        <input type="text" id="frm-rm-resep-catatan" class="form-control" placeholder="Opsional">
+      </div>
+    </div>
+    <div id="rm-resep-items-list">${_rmResepItems.map((item, i) => _rmResepItemHtml(item, i)).join('')}</div>
+    <button class="btn btn-outline btn-sm" style="margin-top:6px;" onclick="tambahItemRmResep()">
+      <i class="fa-solid fa-plus"></i> Tambah Obat
+    </button>` : ''}
   `, [
     {label:'Batal', cls:'btn-secondary', action:'closeModal()'},
     {label:'<i class="fa-solid fa-save"></i> Simpan', cls:'btn-primary', action:'saveFormRekamMedis()'}
@@ -130,6 +161,18 @@ async function saveFormRekamMedis() {
     tekanan_darah: val('frm-rm-td'),
     berat_badan:   val('frm-rm-bb'),
   };
+  if (!_editRmId) {
+    _syncRmResepItems();
+    payload.berlaku_sampai = val('frm-rm-berlaku');
+    payload.resep_catatan = val('frm-rm-resep-catatan');
+    payload.resep_detail = _rmResepItems
+      .map(item => ({
+        nama_obat: item.nama_obat.trim(),
+        jumlah: item.jumlah || 1,
+        aturan: item.aturan || '',
+      }))
+      .filter(item => item.nama_obat);
+  }
   try {
     const res = await apiPost('rekam_medis.php', _editRmId ? 'update' : 'create', payload);
     showToast(res.msg, 'success');
@@ -162,6 +205,7 @@ async function detailRekamMedis(id) {
   if (!r) {
     try { r = await apiGet('rekam_medis.php', { action: 'get', id }); } catch (_) { return; }
   }
+  const resep = r.resep || null;
   openModal('Detail Rekam Medis — ' + r.kode, `
     <div class="grid-2">
       <div class="detail-field"><label>Pasien</label><div class="val">${r.nama_pasien||r.pasien_id}</div></div>
@@ -174,5 +218,76 @@ async function detailRekamMedis(id) {
     <div class="separator"></div>
     <div class="detail-field"><label>Keluhan</label><div class="val">${r.keluhan}</div></div>
     <div class="detail-field"><label>Tindakan</label><div class="val">${r.tindakan||'-'}</div></div>
+    ${resep ? `
+      <div class="separator"></div>
+      <div class="resep-section-title"><i class="fa-solid fa-file-prescription"></i> Resep Obat</div>
+      <div class="grid-2" style="margin-bottom:12px;">
+        <div class="detail-field"><label>ID Resep</label><div class="val">${resep.kode}</div></div>
+        <div class="detail-field"><label>Berlaku Sampai</label><div class="val">${resep.berlaku_sampai || '-'}</div></div>
+      </div>
+      ${resep.catatan ? `<div class="detail-field"><label>Catatan Resep</label><div class="val">${esc(resep.catatan)}</div></div>` : ''}
+      ${(resep.detail || []).map((d, i) => `
+        <div style="background:var(--bg);border-radius:var(--radius);padding:12px;margin-bottom:8px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);margin-bottom:8px;">OBAT ${i + 1}</div>
+          <div class="grid-2">
+            <div class="detail-field"><label>Nama Obat</label><div class="val">${esc(d.nama_obat)}</div></div>
+            <div class="detail-field"><label>Jumlah</label><div class="val">${esc(d.jumlah)}</div></div>
+            <div class="detail-field"><label>Aturan Pakai</label><div class="val">${esc(d.aturan || '-')}</div></div>
+          </div>
+        </div>`).join('')}
+    ` : ''}
   `, [{label:'Tutup', cls:'btn-secondary', action:'closeModal()'}]);
+}
+
+function defaultResepExpiry() {
+  const d = new Date();
+  d.setHours(d.getHours() + 24, 0, 0, 0);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function _rmResepItemHtml(item, i) {
+  return `
+  <div class="resep-item-block" id="rm-resep-item-${i}" style="background:var(--bg);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:11px;font-weight:700;color:var(--text-light);">OBAT ${i + 1}</span>
+      ${i > 0 ? `<button class="btn btn-xs btn-danger" onclick="hapusItemRmResep(${i})"><i class="fa-solid fa-xmark"></i></button>` : ''}
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nama Obat</label>
+        <input type="text" id="frm-rm-obat-${i}" class="form-control" placeholder="Contoh: Amoxicillin 500 mg" value="${esc(item.nama_obat || '')}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Jumlah</label>
+        <input type="number" id="frm-rm-jml-${i}" class="form-control" value="${item.jumlah || 1}" min="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Aturan Pakai</label>
+      <input type="text" id="frm-rm-aturan-${i}" class="form-control" placeholder="3x1 sesudah makan" value="${esc(item.aturan || '')}">
+    </div>
+  </div>`;
+}
+
+function _syncRmResepItems() {
+  _rmResepItems.forEach((_, i) => {
+    _rmResepItems[i].nama_obat = document.getElementById(`frm-rm-obat-${i}`)?.value || '';
+    _rmResepItems[i].jumlah = parseInt(document.getElementById(`frm-rm-jml-${i}`)?.value) || 1;
+    _rmResepItems[i].aturan = document.getElementById(`frm-rm-aturan-${i}`)?.value || '';
+  });
+}
+
+function tambahItemRmResep() {
+  _syncRmResepItems();
+  _rmResepItems.push({ nama_obat:'', jumlah:1, aturan:'' });
+  const listEl = document.getElementById('rm-resep-items-list');
+  if (listEl) listEl.innerHTML = _rmResepItems.map((item, i) => _rmResepItemHtml(item, i)).join('');
+}
+
+function hapusItemRmResep(i) {
+  _syncRmResepItems();
+  _rmResepItems.splice(i, 1);
+  const listEl = document.getElementById('rm-resep-items-list');
+  if (listEl) listEl.innerHTML = _rmResepItems.map((item, idx) => _rmResepItemHtml(item, idx)).join('');
 }

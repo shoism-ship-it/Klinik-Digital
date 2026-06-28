@@ -20,6 +20,16 @@ function fmtRupiah(n) {
   return 'Rp ' + Number(n).toLocaleString('id-ID');
 }
 
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }[ch]));
+}
+
 function val(id) {
   const el = document.getElementById(id);
   return el ? el.value.trim() : '';
@@ -35,4 +45,8 @@ function currentDokter() {
 
 function currentPasien() {
   return _pasienList.find(p => p.nama === currentName) || null;
+}
+
+function prodiOptions() {
+  return ['Teknik Informatika', 'Teknik Elektro', 'Teknik Mesin', 'Manajemen dan Bisnis'];
 }
