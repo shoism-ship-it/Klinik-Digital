@@ -1,23 +1,31 @@
 let _bookingData = [];
+let _bookingAvailability = [];
 
 async function renderBooking() {
   const body = document.getElementById('content-body');
-  _bookingData = await apiGet('booking.php', { action: 'list' });
+  const today = new Date().toISOString().split('T')[0];
+  [_bookingData, _bookingAvailability] = await Promise.all([
+    apiGet('booking.php', { action: 'list' }),
+    apiGet('booking.php', { action: 'availability', tanggal: today }).catch(() => []),
+  ]);
   body.innerHTML = _buildBookingPage();
 }
 
 function _buildBookingPage() {
   const today       = new Date().toISOString().split('T')[0];
   const pasienOpts  = _pasienList.map(p => `<option value="${p.id}">${p.nama}</option>`).join('');
-  const dokterOpts  = _dokterList.map(d => `<option value="${d.id}">${d.nama} (${d.spesialis})</option>`).join('');
+  const dokterOpts  = dokterBookingOptions();
   const isQueueOnly = currentRole === 'dokter';
+  const isAdminView = currentRole === 'admin';
+  const tableData = isAdminView ? _bookingData.filter(b => b.status === 'Menunggu') : _bookingData;
   return `
   <div class="section-header">
-    <div><h2>${isQueueOnly ? 'Antrian Pasien' : 'Booking Jadwal'}</h2><p>${isQueueOnly ? 'Daftar antrian pasien sesuai dokter login' : 'Buat janji temu dengan dokter klinik'}</p></div>
+    <div><h2>${isQueueOnly ? 'Antrian Pasien' : isAdminView ? 'Booking Menunggu' : 'Booking Jadwal'}</h2><p>${isQueueOnly ? 'Daftar antrian pasien sesuai dokter login' : isAdminView ? 'Daftar pasien yang menunggu konfirmasi booking' : 'Buat janji temu dengan dokter klinik'}</p></div>
   </div>
-  <div class="${isQueueOnly ? '' : 'booking-layout'}">
-    ${isQueueOnly ? '' : `
+  <div class="${isQueueOnly || isAdminView ? '' : 'booking-layout'}">
+    ${isQueueOnly || isAdminView ? '' : `
     <div>
+      <div id="doctor-availability-panel" style="margin-bottom:14px;">${doctorAvailabilityCards()}</div>
       <div class="card">
         <div class="card-header"><h3><i class="fa-solid fa-calendar-plus"></i> Form Booking</h3></div>
         <div class="card-body">
@@ -26,24 +34,16 @@ function _buildBookingPage() {
             <select class="form-control" id="book-pasien">${pasienOpts}</select>
           </div>` : ''}
           <div class="form-group"><label class="form-label">Pilih Dokter *</label>
-            <select class="form-control" id="book-dokter">${dokterOpts}</select>
+            <select class="form-control" id="book-dokter" onchange="document.getElementById('book-submit').disabled = isSelectedDoctorBlocked()">${dokterOpts}</select>
           </div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Tanggal *</label>
-              <input type="date" class="form-control" id="book-tgl" value="${today}" min="${today}">
-            </div>
-            <div class="form-group"><label class="form-label">Jam</label>
-              <select class="form-control" id="book-jam">
-                <option>08:00</option><option>09:00</option><option>10:00</option>
-                <option>11:00</option><option>13:00</option><option>14:00</option>
-              </select>
-            </div>
+          <div class="form-group"><label class="form-label">Tanggal *</label>
+            <input type="date" class="form-control" id="book-tgl" value="${today}" min="${today}" onchange="refreshBookingAvailability()">
           </div>
           <div class="form-group">
             <label class="form-label">Keluhan Awal</label>
             <textarea class="form-control" rows="3" id="book-keluhan" placeholder="Tuliskan keluhan Anda..."></textarea>
           </div>
-          <button class="btn btn-primary btn-w-full" onclick="doBooking()">
+          <button class="btn btn-primary btn-w-full" id="book-submit" onclick="doBooking()" ${isSelectedDoctorBlocked() ? 'disabled' : ''}>
             <i class="fa-solid fa-calendar-check"></i> Booking Sekarang
           </button>
         </div>
@@ -52,36 +52,89 @@ function _buildBookingPage() {
     <div>
       <div id="booking-output-area" style="display:none;margin-bottom:14px;"></div>
       <div class="card">
-        <div class="card-header"><h3><i class="fa-solid fa-clock-rotate-left"></i> ${isQueueOnly ? 'Antrian Dokter' : 'Riwayat Booking'}</h3></div>
+        <div class="card-header"><h3><i class="fa-solid fa-clock-rotate-left"></i> ${isQueueOnly ? 'Antrian Dokter' : isAdminView ? 'Pasien Menunggu Konfirmasi' : 'Riwayat Booking'}</h3></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>No Antrian</th><th>ID</th><th>Pasien</th><th>Dokter</th><th>Tanggal</th><th>Status</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No Antrian</th><th>ID</th><th>Pasien</th><th>Dokter</th><th>Tanggal</th><th>Status</th>${isAdminView ? '' : '<th>Aksi</th>'}</tr></thead>
             <tbody>
-              ${_bookingData.length === 0
-                ? '<tr><td colspan="7" style="text-align:center;color:var(--text-light);padding:16px;">Belum ada booking.</td></tr>'
-                : _bookingData.map(b=>`<tr>
-                    <td><span class="queue-badge">${b.no_antrian || '-'}</span></td>
-                    <td><span class="badge badge-muted">${b.kode}</span></td>
-                    <td><strong>${b.nama_pasien}</strong></td>
-                    <td>${b.nama_dokter}</td>
-                    <td>${b.tanggal}</td>
-                    <td><span class="badge ${bookingStatusBadge(b.status)}">${b.status}</span></td>
-                    <td>
-                      ${currentRole === 'admin'
-                        ? `<button class="btn btn-xs btn-success" onclick="updateStatusBooking(${b.id},'Selesai')"><i class="fa-solid fa-check"></i></button>`
-                        : ''}
-                      ${currentRole === 'dokter'
-                        ? `<button class="btn btn-xs btn-success" onclick="updateStatusBooking(${b.id},'Dikonfirmasi')"><i class="fa-solid fa-user-check"></i></button>`
-                        : `<button class="btn btn-xs btn-outline" onclick="openEditBooking(${b.id})"><i class="fa-solid fa-pen"></i></button>
-                           <button class="btn btn-xs btn-danger" onclick="hapusBooking(${b.id},'${b.kode}')"><i class="fa-solid fa-trash"></i></button>`}
-                    </td>
-                  </tr>`).join('')}
+              ${bookingRows(tableData, isQueueOnly, isAdminView)}
             </tbody>
           </table>
         </div>
       </div>
     </div>
   </div>`;
+}
+
+function bookingRows(data, isQueueOnly, isAdminView) {
+  const cols = isAdminView ? 6 : 7;
+  if (!data.length) {
+    return `<tr><td colspan="${cols}" style="text-align:center;color:var(--text-light);padding:16px;">Belum ada booking.</td></tr>`;
+  }
+  return data.map(b=>`<tr>
+    <td><span class="queue-badge">${b.no_antrian || '-'}</span></td>
+    <td><span class="badge badge-muted">${b.kode}</span></td>
+    <td><strong>${esc(b.nama_pasien)}</strong></td>
+    <td>${esc(b.nama_dokter)}</td>
+    <td>${b.tanggal}</td>
+    <td><span class="badge ${bookingStatusBadge(b.status)}">${b.status}</span></td>
+    ${isAdminView ? '' : `<td>
+      ${isQueueOnly
+        ? `<button class="btn btn-xs btn-success" onclick="updateStatusBooking(${b.id},'Dikonfirmasi')"><i class="fa-solid fa-user-check"></i></button>`
+        : `<button class="btn btn-xs btn-outline" onclick="openEditBooking(${b.id})"><i class="fa-solid fa-pen"></i></button>
+           <button class="btn btn-xs btn-danger" onclick="hapusBooking(${b.id},'${b.kode}')"><i class="fa-solid fa-trash"></i></button>`}
+    </td>`}
+  </tr>`).join('');
+}
+
+function dokterBookingOptions() {
+  const source = _bookingAvailability.length ? _bookingAvailability : _dokterList;
+  return source.map(d => {
+    const blocked = d.buka === false || d.full === true;
+    const suffix = d.buka === false ? ' - tidak praktik' : d.full ? ' - full' : d.sisa !== undefined ? ` - sisa ${d.sisa}` : '';
+    return `<option value="${d.id}" ${blocked ? 'disabled' : ''}>${esc(d.nama)} (${esc(d.spesialis || 'Umum')})${suffix}</option>`;
+  }).join('');
+}
+
+function doctorAvailabilityCards() {
+  const rows = _bookingAvailability.length ? _bookingAvailability : _dokterList.map(d => ({ ...d, buka: true, full: false, sisa: '-' }));
+  return `
+  <div class="card">
+    <div class="card-header"><h3><i class="fa-solid fa-user-doctor"></i> Data Dokter Praktik</h3></div>
+    <div class="card-body doctor-availability-grid">
+      ${rows.map(d => `
+        <div class="doctor-mini-card">
+          <div>
+            <strong>${esc(d.nama)}</strong>
+            <span>${esc(d.spesialis || 'Umum')} · ${esc(d.hari || d.hari_tanggal || '-')} · ${esc(d.jam || '-')}</span>
+          </div>
+          <span class="badge ${d.buka === false ? 'badge-secondary' : d.full ? 'badge-danger' : 'badge-success'}">
+            ${d.buka === false ? 'Tidak praktik' : d.full ? 'Full' : `Sisa ${d.sisa}`}
+          </span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function isSelectedDoctorBlocked() {
+  const selected = document.getElementById('book-dokter')?.value || _bookingAvailability.find(d => d.buka !== false && !d.full)?.id || '';
+  const found = _bookingAvailability.find(d => String(d.id) === String(selected));
+  return !!found && (found.buka === false || found.full === true);
+}
+
+async function refreshBookingAvailability() {
+  const tanggal = val('book-tgl') || new Date().toISOString().split('T')[0];
+  try {
+    _bookingAvailability = await apiGet('booking.php', { action: 'availability', tanggal });
+    const panel = document.getElementById('doctor-availability-panel');
+    if (panel) panel.innerHTML = doctorAvailabilityCards();
+    const select = document.getElementById('book-dokter');
+    if (select) select.innerHTML = dokterBookingOptions();
+    const submit = document.getElementById('book-submit');
+    if (submit) submit.disabled = isSelectedDoctorBlocked();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
 }
 
 async function doBooking() {
@@ -121,24 +174,7 @@ async function doBooking() {
     showToast(res.msg, 'success');
     // Refresh riwayat booking
     _bookingData = await apiGet('booking.php', { action: 'list' });
-    const tbody = document.querySelector('.booking-layout .card:last-child tbody');
-    if (tbody) {
-      tbody.innerHTML = _bookingData.map(b=>`<tr>
-        <td><span class="queue-badge">${b.no_antrian || '-'}</span></td>
-        <td><span class="badge badge-muted">${b.kode}</span></td>
-        <td><strong>${b.nama_pasien}</strong></td>
-        <td>${b.nama_dokter}</td>
-        <td>${b.tanggal}</td>
-        <td><span class="badge ${bookingStatusBadge(b.status)}">${b.status}</span></td>
-        <td>
-          ${currentRole === 'admin'
-            ? `<button class="btn btn-xs btn-success" onclick="updateStatusBooking(${b.id},'Selesai')"><i class="fa-solid fa-check"></i></button>`
-            : ''}
-          <button class="btn btn-xs btn-outline" onclick="openEditBooking(${b.id})"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn btn-xs btn-danger" onclick="hapusBooking(${b.id},'${b.kode}')"><i class="fa-solid fa-trash"></i></button>
-        </td>
-      </tr>`).join('');
-    }
+    renderSection('booking');
   } catch (e) { showToast(e.message, 'error'); }
 }
 

@@ -42,4 +42,10 @@ abstract class BaseRepository
     {
         return $prefix . str_pad((string)$id, 3, '0', STR_PAD_LEFT);
     }
+
+    protected function numericId(string $value): int
+    {
+        $digits = preg_replace('/\D+/', '', $value);
+        return $digits === '' ? 0 : (int)$digits;
+    }
 }

@@ -7,6 +7,9 @@ function openModal(title, content, buttons, large = false) {
   const box = document.getElementById('modal-box');
   box.className = 'modal-box' + (large ? ' modal-lg' : '');
   document.getElementById('modal-overlay').classList.add('open');
+  if (typeof enhanceResponsiveTables === 'function') {
+    enhanceResponsiveTables(document.getElementById('modal-content'));
+  }
 }
 
 function closeModal() {

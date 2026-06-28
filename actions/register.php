@@ -46,9 +46,7 @@ try {
         exit;
     }
 
-    $roleRaw = strtolower((string)($_POST['role'] ?? 'pasien'));
-    $roleMap = ['mahasiswa'=>'pasien','dosen'=>'pasien','staff'=>'pasien','pasien'=>'pasien','dokter'=>'dokter','admin'=>'admin'];
-    $_SESSION['reg_users'][$email] = ['password' => $password, 'role' => $roleMap[$roleRaw] ?? 'pasien', 'name' => $nama];
+    $_SESSION['reg_users'][$email] = ['password' => $password, 'role' => 'pasien', 'name' => $nama];
     $_SESSION['flash_success'] = 'Pendaftaran berhasil! Silakan login.';
     header('Location: ../login.php');
     exit;

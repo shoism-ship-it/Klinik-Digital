@@ -14,6 +14,23 @@ class StatsRepository extends BaseRepository
             'stok_menipis' => (int)$this->fetchColumn('SELECT COUNT(*) FROM obat WHERE stok < 20'),
             'booking_menunggu' => (int)$this->fetchColumn('SELECT COUNT(*) FROM booking WHERE status="Menunggu"'),
             'transaksi_menunggu' => (int)$this->fetchColumn('SELECT COUNT(*) FROM transaksi WHERE status="Menunggu"'),
+            'stok_kritis_list' => array_map(fn ($row) => $this->withObatCode($row), $this->fetchAll(
+                'SELECT id, nama, kategori, stok, satuan, kadaluarsa
+                 FROM obat
+                 WHERE stok < 20
+                 ORDER BY stok ASC, nama ASC
+                 LIMIT 8'
+            )),
+            'booking_menunggu_list' => array_map(fn ($row) => $this->withBookingCode($row), $this->fetchAll(
+                'SELECT b.id, b.tanggal, b.no_antrian, b.keluhan, b.status,
+                        p.nama AS nama_pasien, d.nama AS nama_dokter
+                 FROM booking b
+                 JOIN pasien p ON b.pasien_id = p.id
+                 JOIN dokter d ON b.dokter_id = d.id
+                 WHERE b.status = "Menunggu"
+                 ORDER BY b.tanggal ASC, COALESCE(b.no_antrian, ""), b.id ASC
+                 LIMIT 8'
+            )),
             'kunjungan_bulanan' => $this->fetchAll(
                 'SELECT MONTH(tanggal) AS bulan, COUNT(*) AS jumlah
                  FROM rekam_medis
@@ -90,6 +107,27 @@ class StatsRepository extends BaseRepository
                  LIMIT 5',
                 [$year]
             ),
+            'pendapatan_per_bulan' => $this->fetchAll(
+                'SELECT MONTH(tanggal) AS bulan, COALESCE(SUM(total), 0) AS total
+                 FROM transaksi
+                 WHERE YEAR(tanggal)=?
+                 GROUP BY MONTH(tanggal)
+                 ORDER BY bulan',
+                [$year]
+            ),
+            'total_pendapatan' => (int)$this->fetchColumn('SELECT COALESCE(SUM(total), 0) FROM transaksi WHERE YEAR(tanggal)=?', [$year]),
         ];
+    }
+
+    private function withObatCode(array $row): array
+    {
+        $row['kode'] = $this->code('O', (int)$row['id']);
+        return $row;
+    }
+
+    private function withBookingCode(array $row): array
+    {
+        $row['kode'] = $this->code('B', (int)$row['id']);
+        return $row;
     }
 }
