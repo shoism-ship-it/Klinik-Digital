@@ -11,11 +11,8 @@ async function renderDashboard() {
 }
 
 async function renderDashAdmin(stats, body) {
-  const monthly = Array.from({ length: 12 }, (_, i) => {
-    const row = (stats.kunjungan_bulanan || []).find(x => parseInt(x.bulan) === i + 1);
-    return row ? parseInt(row.jumlah) : 0;
-  });
-  const maxMonthly = Math.max(...monthly, 1);
+  const waiting = stats.booking_menunggu_list || [];
+  const critical = stats.stok_kritis_list || [];
   body.innerHTML = `
   <div class="role-dashboard role-dashboard-admin">
   <div class="stats-row">
@@ -26,37 +23,51 @@ async function renderDashAdmin(stats, body) {
   </div>
   <div class="grid-2" style="margin-bottom:16px;">
     <div class="card">
-      <div class="card-header"><h3><i class="fa-solid fa-chart-bar"></i> Kunjungan Bulanan ${new Date().getFullYear()}</h3><span class="badge badge-info">Sumbu X/Y</span></div>
-      <div class="card-body">
-        <div class="chart-axis-y"><span>100%</span><span>50%</span><span>0%</span></div>
-        <div class="bar-chart">
-          ${monthly.map(v=>{
-            const pct = Math.round((v / maxMonthly) * 100);
-            return `<div class="bar" style="height:${Math.max(8, pct)}%" data-val="${pct}%"><span>${v}</span></div>`;
-          }).join('')}
-        </div>
-        <div class="bar-labels">
-          ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'].map(m=>`<span>${m}</span>`).join('')}
-        </div>
+      <div class="card-header"><h3><i class="fa-solid fa-calendar-check"></i> Booking Menunggu</h3><span class="badge badge-warning">${waiting.length} data</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Antrian</th><th>ID</th><th>Pasien</th><th>Dokter</th><th>Tanggal</th></tr></thead>
+          <tbody>
+            ${waiting.length === 0
+              ? '<tr><td colspan="5" style="text-align:center;color:var(--text-light);padding:16px;">Tidak ada booking menunggu.</td></tr>'
+              : waiting.map(b => `<tr>
+                <td><span class="queue-badge">${b.no_antrian || '-'}</span></td>
+                <td><span class="badge badge-muted">${b.kode}</span></td>
+                <td><strong>${esc(b.nama_pasien)}</strong></td>
+                <td>${esc(b.nama_dokter)}</td>
+                <td>${b.tanggal}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><h3><i class="fa-solid fa-stethoscope"></i> Distribusi Diagnosa</h3></div>
-      <div class="card-body">
-        ${[['ISPA / Flu','38%','var(--c1)'],['Gangguan Pencernaan','22%','var(--c2)'],['Cedera Ringan','15%','var(--c3)'],['Sakit Kepala','13%','var(--c4)'],['Lainnya','12%','var(--c5)']].map(([l,p,c])=>`
-        <div class="progress-row">
-          <div class="progress-meta"><span>${l}</span><strong>${p}</strong></div>
-          <div class="progress-bar-bg"><div class="progress-fill" style="width:${p};background:${c};"></div></div>
-        </div>`).join('')}
+      <div class="card-header"><h3><i class="fa-solid fa-pills"></i> Status Stok Kritis</h3><span class="badge ${critical.length ? 'badge-danger' : 'badge-success'}">${critical.length} obat</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Obat</th><th>Kategori</th><th>Stok</th><th>Kadaluarsa</th></tr></thead>
+          <tbody>
+            ${critical.length === 0
+              ? '<tr><td colspan="5" style="text-align:center;color:var(--text-light);padding:16px;">Semua stok masih aman.</td></tr>'
+              : critical.map(o => `<tr>
+                <td><span class="badge badge-muted">${o.kode}</span></td>
+                <td><strong>${esc(o.nama)}</strong></td>
+                <td>${esc(o.kategori || '-')}</td>
+                <td style="color:var(--danger);font-weight:700;">${o.stok} ${esc(o.satuan || '')}</td>
+                <td>${o.kadaluarsa || '-'}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
   <div class="grid-2">
     <div class="card">
-      <div class="card-header"><h3><i class="fa-solid fa-receipt"></i> Total Pendapatan Bulan Ini</h3></div>
+      <div class="card-header"><h3><i class="fa-solid fa-receipt"></i> Transaksi Menunggu</h3></div>
       <div class="card-body">
-        <div style="font-size:28px;font-weight:700;color:var(--c1);padding:12px 0;">${fmtRupiah(stats.total_transaksi||0)}</div>
-        <p style="color:var(--text-light);font-size:13px;">Total dari semua transaksi berbayar bulan ini</p>
+        <div style="font-size:28px;font-weight:700;color:var(--warning);padding:12px 0;">${stats.transaksi_menunggu??0}</div>
+        <p style="color:var(--text-light);font-size:13px;">Pembayaran pasien yang masih perlu dikonfirmasi</p>
+        <button class="btn btn-outline btn-sm" onclick="renderSection('transaksi')">Lihat Transaksi</button>
       </div>
     </div>
     <div class="card">
@@ -86,7 +97,7 @@ async function renderDashDokter(stats, body) {
       <div class="card-body">
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
           <button class="btn btn-primary" onclick="renderSection('rekam-medis')"><i class="fa-solid fa-plus"></i> Input Rekam Medis</button>
-          <button class="btn btn-outline" onclick="renderSection('resep-obat')"><i class="fa-solid fa-prescription"></i> Buat Resep</button>
+          <button class="btn btn-outline" onclick="renderSection('resep-obat')"><i class="fa-solid fa-capsules"></i> Lihat Obat</button>
           <button class="btn btn-outline" onclick="renderSection('booking')"><i class="fa-solid fa-list-ol"></i> Lihat Antrian</button>
           <button class="btn btn-outline" onclick="renderSection('jadwal')"><i class="fa-solid fa-calendar"></i> Lihat Jadwal</button>
         </div>

@@ -130,8 +130,4 @@ class ResepController extends BaseController
             }
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> ac661c2cdbe7a03b19f2b09a25d9d024c6a3215d

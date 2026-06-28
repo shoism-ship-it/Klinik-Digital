@@ -28,7 +28,7 @@ function _buildJadwalPage(data) {
         : ''}
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(${Math.min(hariAda.length||5,5)},1fr);gap:12px;margin-bottom:16px;">
+  <div class="schedule-grid" style="grid-template-columns:repeat(${Math.min(hariAda.length||5,5)},1fr);">
     ${hariAda.map(h=>`
     <div class="schedule-day">
       <div class="schedule-day-header"><i class="fa-solid fa-calendar-day" style="margin-right:6px;"></i>${h}</div>
@@ -71,7 +71,7 @@ function _buildJadwalPage(data) {
 
 async function openFormJadwal(id = null) {
   _editJadwalId = id;
-  let j = { dokter_id:'', hari:'Senin', jam_mulai:'08:00', jam_selesai:'12:00', kuota:10, status:'Aktif' };
+  let j = { dokter_id:'', hari:'Senin', jam_mulai:'08:00', jam_selesai:'12:00', kuota:5, status:'Aktif' };
   if (id) {
     try { j = await apiGet('jadwal.php', { action: 'get', id }); } catch (_) {}
   }
@@ -102,7 +102,7 @@ async function openFormJadwal(id = null) {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Kuota Pasien</label>
-        <input type="number" id="frm-j-kuota" class="form-control" min="1" value="${j.kuota||10}">
+        <input type="number" id="frm-j-kuota" class="form-control" min="1" value="${j.kuota||5}">
       </div>
       <div class="form-group">
         <label class="form-label">Status</label>
@@ -129,7 +129,7 @@ async function saveFormJadwal() {
   const payload = {
     id: _editJadwalId || undefined,
     dokter_id, hari, jam_mulai, jam_selesai,
-    kuota: parseInt(val('frm-j-kuota'))||10,
+    kuota: parseInt(val('frm-j-kuota'))||5,
     status: val('frm-j-status'),
   };
   try {

@@ -9,8 +9,8 @@ class PasienRepository extends BaseRepository
         $sql = 'SELECT * FROM pasien';
         $params = [];
         if ($q !== '') {
-            $sql .= ' WHERE nama LIKE ? OR nim LIKE ? OR prodi LIKE ?';
-            $params = ["%$q%", "%$q%", "%$q%"];
+            $sql .= ' WHERE id = ?';
+            $params = [$this->numericId($q)];
         }
         $sql .= ' ORDER BY id';
 

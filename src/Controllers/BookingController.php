@@ -5,6 +5,7 @@ namespace Klinik\Controllers;
 use Klinik\Repositories\BookingRepository;
 use Klinik\Repositories\DokterRepository;
 use Klinik\Repositories\PasienRepository;
+use RuntimeException;
 
 class BookingController extends BaseController
 {
@@ -45,7 +46,11 @@ class BookingController extends BaseController
     public function create(): void
     {
         $this->validatePayload();
-        $this->response->ok($this->repo->create($this->payloadForRole()), 'Booking berhasil dibuat');
+        try {
+            $this->response->ok($this->repo->create($this->payloadForRole()), 'Booking berhasil dibuat');
+        } catch (RuntimeException $e) {
+            $this->response->error($e->getMessage());
+        }
     }
 
     public function update(): void
@@ -55,8 +60,18 @@ class BookingController extends BaseController
             $this->response->error('ID tidak valid');
         }
         $this->validatePayload();
-        $this->repo->update($id, $this->payloadForRole());
+        try {
+            $this->repo->update($id, $this->payloadForRole());
+        } catch (RuntimeException $e) {
+            $this->response->error($e->getMessage());
+        }
         $this->response->ok(null, 'Booking berhasil diperbarui');
+    }
+
+    public function availability(): void
+    {
+        $tanggal = (string)$this->query('tanggal', date('Y-m-d'));
+        $this->response->ok($this->repo->availability($tanggal));
     }
 
     public function update_status(): void
@@ -99,8 +114,4 @@ class BookingController extends BaseController
         }
         return $data;
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> ac661c2cdbe7a03b19f2b09a25d9d024c6a3215d

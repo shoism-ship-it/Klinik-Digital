@@ -3,8 +3,7 @@ let _pasienData   = [];
 
 async function renderDataPasien() {
   const body = document.getElementById('content-body');
-  _pasienData = await apiGet('pasien.php', { action: 'list' });
-  _pasienList = _pasienData;
+  _pasienData = [];
   body.innerHTML = _buildPasienPage(_pasienData);
 }
 
@@ -14,7 +13,7 @@ function _buildPasienPage(data) {
     <div><h2>Data Pasien</h2><p>Kelola data seluruh pasien terdaftar</p></div>
     <div class="section-header-actions">
       <div class="search-bar" style="width:220px;"><i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Cari pasien..." oninput="filterPasien(this.value)">
+        <input type="text" placeholder="Cari ID pasien..." oninput="filterPasien(this.value)">
       </div>
       <button class="btn btn-primary" onclick="openFormPasien()"><i class="fa-solid fa-user-plus"></i> Tambah Pasien</button>
     </div>
@@ -22,15 +21,15 @@ function _buildPasienPage(data) {
   <div class="card">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>ID</th><th>Nama</th><th>NIM/NIP</th><th>Prodi/Unit</th><th>Gender</th><th>No HP</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead>
-        <tbody id="tbody-pasien">${_rowsPasien(data)}</tbody>
+        <thead><tr><th>ID</th><th>Nama</th><th>NIM</th><th>Prodi</th><th>Gender</th><th>No HP</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="tbody-pasien">${_emptyPasienRow('Masukkan No ID pasien untuk menampilkan data.')}</tbody>
       </table>
     </div>
   </div>`;
 }
 
 function _rowsPasien(data) {
-  if (!data.length) return '<tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:20px;">Belum ada data pasien.</td></tr>';
+  if (!data.length) return _emptyPasienRow('Data pasien tidak ditemukan. Periksa No ID yang dimasukkan.');
   return data.map(p => `<tr>
     <td><span class="badge badge-muted">${p.kode}</span></td>
     <td><strong>${p.nama}</strong></td>
@@ -48,10 +47,21 @@ function _rowsPasien(data) {
   </tr>`).join('');
 }
 
+function _emptyPasienRow(message) {
+  return `<tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:20px;">${message}</td></tr>`;
+}
+
 async function filterPasien(q) {
+  const tbody = document.getElementById('tbody-pasien');
+  const id = q.trim();
+  if (!id) {
+    if (tbody) tbody.innerHTML = _emptyPasienRow('Masukkan No ID pasien untuk menampilkan data.');
+    _pasienData = [];
+    return;
+  }
   try {
     const data = await apiGet('pasien.php', { action: 'list', q });
-    const tbody = document.getElementById('tbody-pasien');
+    _pasienData = data;
     if (tbody) tbody.innerHTML = _rowsPasien(data);
   } catch (_) {}
 }
@@ -69,22 +79,20 @@ async function openFormPasien(id = null) {
         <div class="input-wrap"><i class="pre fa-solid fa-user"></i><input type="text" id="frm-p-nama" class="form-control" value="${p.nama||''}"></div>
       </div>
       <div class="form-group">
-        <label class="form-label">NIM / NIP</label>
+        <label class="form-label">NIM</label>
         <div class="input-wrap"><i class="pre fa-solid fa-id-card"></i><input type="text" id="frm-p-nim" class="form-control" value="${p.nim||''}"></div>
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Prodi / Unit</label>
+        <label class="form-label">Prodi</label>
         <select id="frm-p-prodi" class="form-control">
-          ${['Teknik Informatika','Sistem Informasi','Teknik Elektro','Manajemen Bisnis','Unit Kemahasiswaan'].map(o=>`<option ${p.prodi===o?'selected':''}>${o}</option>`).join('')}
+          ${prodiOptions().map(o=>`<option ${p.prodi===o?'selected':''}>${o}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Role</label>
-        <select id="frm-p-role" class="form-control">
-          ${['Mahasiswa','Dosen','Staff'].map(o=>`<option ${p.role===o?'selected':''}>${o}</option>`).join('')}
-        </select>
+        <input type="text" id="frm-p-role" class="form-control" value="Mahasiswa" readonly>
       </div>
     </div>
     <div class="form-row">
