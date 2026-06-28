@@ -16,6 +16,8 @@ class AuthService
         $roleMap = [
             'admin' => 'admin@polibatam.ac.id',
             'dokter' => 'dokter@polibatam.ac.id',
+            'dokter2' => 'hendra@polibatam.ac.id',
+            'dokter3' => 'putri@polibatam.ac.id',
             'pasien' => 'pasien@polibatam.ac.id',
         ];
 
@@ -34,6 +36,8 @@ class AuthService
         $fallback = [
             'admin' => ['id' => null, 'name' => 'Ahmad Admin', 'role' => 'admin'],
             'dokter' => ['id' => null, 'name' => 'dr. Sarah Amalia', 'role' => 'dokter'],
+            'dokter2' => ['id' => null, 'name' => 'dr. Hendra Kusuma', 'role' => 'dokter'],
+            'dokter3' => ['id' => null, 'name' => 'dr. Putri Maharani', 'role' => 'dokter'],
             'pasien' => ['id' => null, 'name' => 'Andi Pratama', 'role' => 'pasien'],
         ];
 

@@ -12,8 +12,8 @@ class TransaksiRepository extends BaseRepository
         $params = [];
         $where = [];
         if ($q !== '') {
-            $where[] = '(p.nama LIKE ? OR t.layanan LIKE ? OR t.status LIKE ?)';
-            array_push($params, "%$q%", "%$q%", "%$q%");
+            $where[] = 't.id = ?';
+            $params[] = $this->numericId($q);
         }
         if ($pasienId) {
             $where[] = 't.pasien_id = ?';

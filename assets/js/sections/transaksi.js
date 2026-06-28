@@ -12,7 +12,7 @@ function _buildTransaksiPage(data) {
   const gratisSubsidi   = data.filter(t => parseInt(t.total) === 0).length;
   return `
   <div class="section-header">
-    <div><h2>${currentRole === 'pasien' ? 'Transaksi Saya' : 'Transaksi'}</h2><p>${currentRole === 'pasien' ? 'Status pembayaran dan QRIS dummy layanan Anda' : 'Riwayat transaksi layanan klinik kampus'}</p></div>
+    <div><h2>${currentRole === 'pasien' ? 'Transaksi Saya' : 'Transaksi'}</h2><p>${currentRole === 'pasien' ? 'Status pembayaran dan QRIS simulasi layanan Anda' : 'Riwayat transaksi layanan klinik kampus'}</p></div>
     <div class="section-header-actions">
       ${currentRole === 'admin' ? `<button class="btn btn-primary" onclick="openFormTransaksi()"><i class="fa-solid fa-plus"></i> Tambah Transaksi</button>` : ''}
     </div>
@@ -55,7 +55,6 @@ function openFormTransaksi(id = null) {
   const pasienId = trx?.pasien_id || _pasienList[0]?.id || '';
   const tanggal = trx?.tanggal || today;
   const layanan = trx?.layanan || 'Konsultasi Umum';
-  const metode = trx?.metode || 'QRIS Dummy';
   const status = trx?.status || 'Selesai';
   const total = parseInt(trx?.total || 0);
   const pasienOpts = _pasienList.map(p => `<option value="${p.id}" ${String(p.id)===String(pasienId)?'selected':''}>${p.nama}</option>`).join('');
@@ -78,13 +77,9 @@ function openFormTransaksi(id = null) {
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Pembayaran</label>
-        <input type="text" id="frm-trx-metode" class="form-control" value="${metode === 'Gratis' ? 'Gratis' : 'QRIS Dummy'}" readonly>
+        <label class="form-label">Total Biaya (Rp)</label>
+        <input type="number" id="frm-trx-total" class="form-control" value="${total}" min="0">
       </div>
-    </div>
-    <div class="form-group" id="total-field">
-      <label class="form-label">Total Biaya (Rp)</label>
-      <input type="number" id="frm-trx-total" class="form-control" value="${total}" min="0">
     </div>
     <div class="form-group">
       <label class="form-label">Status</label>
@@ -96,17 +91,11 @@ function openFormTransaksi(id = null) {
     {label:'Batal', cls:'btn-secondary', action:'closeModal()'},
     {label:'<i class="fa-solid fa-save"></i> Simpan', cls:'btn-primary', action:'saveFormTransaksi()'}
   ]);
-  toggleTotalField(metode);
-}
-
-function toggleTotalField(metode) {
-  const tf = document.getElementById('total-field');
-  if (tf) tf.style.display = metode === 'Gratis' ? 'none' : 'block';
 }
 
 async function saveFormTransaksi() {
   const pasien_id = val('frm-trx-pasien');
-  const metode    = parseInt(val('frm-trx-total')) === 0 ? 'Gratis' : 'QRIS Dummy';
+  const metode    = parseInt(val('frm-trx-total')) === 0 ? 'Gratis' : 'QRIS Simulasi';
   if (!pasien_id) { showToast('Pilih pasien!', 'error'); return; }
   const payload = {
     id: _editTransaksiId || undefined,
@@ -138,9 +127,9 @@ function detailTransaksi(id) {
     ${parseInt(t.total) > 0 ? `
     <div class="separator"></div>
     <div class="qris-box">
-      <div class="qris-visual" aria-label="QRIS Dummy">${dummyQrisSvg(t.kode)}</div>
+      <div class="qris-visual" aria-label="QRIS Simulasi">${qrisSimulationSvg(t.kode)}</div>
       <div>
-        <h4>QRIS Dummy</h4>
+        <h4>QRIS Simulasi</h4>
         <p>Scan simulasi untuk transaksi ${t.kode}. Status pembayaran dikonfirmasi admin.</p>
         <span class="badge badge-info">${fmtRupiah(t.total)}</span>
       </div>
@@ -148,7 +137,7 @@ function detailTransaksi(id) {
   `, [{label:'Tutup', cls:'btn-secondary', action:'closeModal()'}]);
 }
 
-function dummyQrisSvg(kode) {
+function qrisSimulationSvg(kode) {
   const bits = String(kode).split('').map(c => c.charCodeAt(0));
   let cells = '';
   for (let y = 0; y < 9; y++) {
