@@ -3,14 +3,17 @@
 namespace Klinik\Controllers;
 
 use Klinik\Repositories\RekamMedisRepository;
+use Klinik\Repositories\ResepRepository;
 use Klinik\Repositories\DokterRepository;
 use Klinik\Repositories\PasienRepository;
+use Throwable;
 
 class RekamMedisController extends BaseController
 {
     private RekamMedisRepository $repo;
     private DokterRepository $dokter;
     private PasienRepository $pasien;
+    private ?ResepRepository $resep = null;
 
     public function __construct(...$args)
     {
@@ -18,6 +21,7 @@ class RekamMedisController extends BaseController
         $this->repo = $args[3];
         $this->dokter = $args[4];
         $this->pasien = $args[5];
+        $this->resep = $args[6] ?? null;
     }
 
     public function list(): void
@@ -46,7 +50,25 @@ class RekamMedisController extends BaseController
     public function create(): void
     {
         $this->validatePayload();
-        $this->response->ok($this->repo->create($this->payloadWithRoleDoctor()), 'Rekam medis berhasil ditambahkan');
+        $data = $this->payloadWithRoleDoctor();
+        try {
+            $rekam = $this->repo->create($data);
+            $detail = $data['resep_detail'] ?? [];
+            if ($this->resep && is_array($detail) && !empty($detail)) {
+                $this->resep->create([
+                    'rekam_medis_id' => $rekam['id'],
+                    'pasien_id' => $data['pasien_id'],
+                    'dokter_id' => $data['dokter_id'],
+                    'tanggal' => $data['tanggal'],
+                    'berlaku_sampai' => $data['berlaku_sampai'] ?? '',
+                    'catatan' => $data['resep_catatan'] ?? '',
+                    'detail' => $detail,
+                ]);
+            }
+            $this->response->ok($rekam, 'Rekam medis dan resep berhasil ditambahkan');
+        } catch (Throwable $e) {
+            $this->response->error('Gagal menyimpan rekam medis: ' . $e->getMessage());
+        }
     }
 
     public function update(): void
