@@ -12,7 +12,7 @@ function _buildTransaksiPage(data) {
   const gratisSubsidi   = data.filter(t => parseInt(t.total) === 0).length;
   return `
   <div class="section-header">
-    <div><h2>${currentRole === 'pasien' ? 'Transaksi Saya' : 'Transaksi'}</h2><p>${currentRole === 'pasien' ? 'Status pembayaran dan QRIS simulasi layanan Anda' : 'Riwayat transaksi layanan klinik kampus'}</p></div>
+    <div><h2>${currentRole === 'pasien' ? 'Transaksi Saya' : 'Transaksi'}</h2><p>${currentRole === 'pasien' ? 'Status pembayaran cash layanan Anda' : 'Riwayat transaksi cash layanan klinik kampus'}</p></div>
     <div class="section-header-actions">
       ${currentRole === 'admin' ? `<button class="btn btn-primary" onclick="openFormTransaksi()"><i class="fa-solid fa-plus"></i> Tambah Transaksi</button>` : ''}
     </div>
@@ -95,7 +95,7 @@ function openFormTransaksi(id = null) {
 
 async function saveFormTransaksi() {
   const pasien_id = val('frm-trx-pasien');
-  const metode    = parseInt(val('frm-trx-total')) === 0 ? 'Gratis' : 'QRIS Simulasi';
+  const metode    = parseInt(val('frm-trx-total')) === 0 ? 'Gratis' : 'Cash';
   if (!pasien_id) { showToast('Pilih pasien!', 'error'); return; }
   const payload = {
     id: _editTransaksiId || undefined,
@@ -121,32 +121,21 @@ function detailTransaksi(id) {
       <div class="detail-field"><label>Tanggal</label><div class="val">${t.tanggal}</div></div>
       ${currentRole !== 'pasien' ? `<div class="detail-field"><label>Pasien</label><div class="val">${t.nama_pasien}</div></div>` : ''}
       <div class="detail-field"><label>Layanan</label><div class="val">${t.layanan}</div></div>
+      <div class="detail-field"><label>Metode Pembayaran</label><div class="val"><span class="badge badge-info">${parseInt(t.total)===0?'Gratis':'Cash'}</span></div></div>
       <div class="detail-field"><label>Total</label><div class="val">${parseInt(t.total)===0?'<span class="badge badge-success">Gratis</span>':`<strong>${fmtRupiah(t.total)}</strong>`}</div></div>
       <div class="detail-field"><label>Status</label><div class="val"><span class="badge badge-success">${t.status}</span></div></div>
     </div>
     ${parseInt(t.total) > 0 ? `
     <div class="separator"></div>
-    <div class="qris-box">
-      <div class="qris-visual" aria-label="QRIS Simulasi">${qrisSimulationSvg(t.kode)}</div>
+    <div class="cash-info-box">
+      <div class="cash-info-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
       <div>
-        <h4>QRIS Simulasi</h4>
-        <p>Scan simulasi untuk transaksi ${t.kode}. Status pembayaran dikonfirmasi admin.</p>
+        <h4>Pembayaran Cash</h4>
+        <p>Pasien melakukan pembayaran langsung di kasir klinik. Status transaksi dikonfirmasi admin setelah uang diterima.</p>
         <span class="badge badge-info">${fmtRupiah(t.total)}</span>
       </div>
     </div>` : ''}
   `, [{label:'Tutup', cls:'btn-secondary', action:'closeModal()'}]);
-}
-
-function qrisSimulationSvg(kode) {
-  const bits = String(kode).split('').map(c => c.charCodeAt(0));
-  let cells = '';
-  for (let y = 0; y < 9; y++) {
-    for (let x = 0; x < 9; x++) {
-      const on = (x < 3 && y < 3) || (x > 5 && y < 3) || (x < 3 && y > 5) || ((bits[(x + y) % bits.length] + x * y) % 3 === 0);
-      cells += `<span class="${on ? 'on' : ''}"></span>`;
-    }
-  }
-  return `<div class="qris-grid">${cells}</div><strong>QRIS</strong>`;
 }
 
 function hapusTransaksi(id, kode) {

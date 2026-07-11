@@ -1,39 +1,44 @@
 let _editRmId = null;
 let _rmData   = [];
+let _rmAllData = [];
 let _rmResepItems = [];
+const _rmPreviewLimit = 10;
 
 async function renderRekamMedis() {
   const body = document.getElementById('content-body');
-  _rmData = [];
+  _rmAllData = await apiGet('rekam_medis.php', { action: 'list' });
+  _rmData = _rmAllData.slice(0, _rmPreviewLimit);
   body.innerHTML = _buildRmPage(_rmData);
 }
 
 function _buildRmPage(data) {
   const showDoctor = currentRole === 'admin';
+  const canManage = currentRole !== 'admin';
   return `
   <div class="section-header">
-    <div><h2>Rekam Medis</h2><p>Input dan riwayat rekam medis pasien</p></div>
+    <div><h2>Rekam Medis</h2><p>${canManage ? 'Input dan riwayat rekam medis pasien' : 'Riwayat rekam medis pasien'}</p></div>
     <div class="section-header-actions">
       <div class="search-bar" style="width:200px;"><i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" placeholder="Cari ID rekam medis..." oninput="filterRm(this.value)">
       </div>
-      <button class="btn btn-primary" onclick="openFormRekamMedis()"><i class="fa-solid fa-plus"></i> Input Rekam Medis</button>
+      ${canManage ? `<button class="btn btn-primary" onclick="openFormRekamMedis()"><i class="fa-solid fa-plus"></i> Input Rekam Medis</button>` : ''}
     </div>
   </div>
   <div class="card">
     <div class="table-wrap">
       <table>
         <thead><tr><th>ID</th><th>Pasien</th>${showDoctor ? '<th>Dokter</th>' : ''}<th>Tanggal</th><th>Diagnosa</th><th>Aksi</th></tr></thead>
-        <tbody id="tbody-rm">${_emptyRmRow('Masukkan No ID rekam medis untuk menampilkan data.')}</tbody>
+        <tbody id="tbody-rm">${_rowsRm(data, _rmAllData.length > _rmPreviewLimit)}</tbody>
       </table>
     </div>
   </div>`;
 }
 
-function _rowsRm(data) {
+function _rowsRm(data, hasMore = false) {
   const showDoctor = currentRole === 'admin';
+  const canManage = currentRole !== 'admin';
   if (!data.length) return _emptyRmRow('Data rekam medis tidak ditemukan. Periksa No ID yang dimasukkan.');
-  return data.map(r => `<tr>
+  const rows = data.map(r => `<tr>
     <td><span class="badge badge-muted">${r.kode}</span></td>
     <td><strong>${r.nama_pasien}</strong></td>
     ${showDoctor ? `<td>${r.nama_dokter}</td>` : ''}
@@ -41,10 +46,11 @@ function _rowsRm(data) {
     <td>${r.diagnosa}</td>
     <td>
       <button class="btn btn-xs btn-secondary" onclick="detailRekamMedis(${r.id})"><i class="fa-solid fa-eye"></i> Detail</button>
-      <button class="btn btn-xs btn-outline" onclick="openFormRekamMedis(${r.id})"><i class="fa-solid fa-pen"></i></button>
-      <button class="btn btn-xs btn-danger" onclick="hapusRm(${r.id},'${r.kode}')"><i class="fa-solid fa-trash"></i></button>
+      ${canManage ? `<button class="btn btn-xs btn-outline" onclick="openFormRekamMedis(${r.id})"><i class="fa-solid fa-pen"></i></button>
+      <button class="btn btn-xs btn-danger" onclick="hapusRm(${r.id},'${r.kode}')"><i class="fa-solid fa-trash"></i></button>` : ''}
     </td>
   </tr>`).join('');
+  return rows + (hasMore ? _infoRmRow(`Menampilkan ${_rmPreviewLimit} data pertama. Gunakan pencarian ID untuk melihat data lainnya.`) : '');
 }
 
 function _emptyRmRow(message) {
@@ -52,12 +58,17 @@ function _emptyRmRow(message) {
   return `<tr><td colspan="${showDoctor ? 6 : 5}" style="text-align:center;color:var(--text-light);padding:20px;">${message}</td></tr>`;
 }
 
+function _infoRmRow(message) {
+  const showDoctor = currentRole === 'admin';
+  return `<tr><td colspan="${showDoctor ? 6 : 5}" style="text-align:center;color:var(--text-light);font-size:12px;padding:12px;">${message}</td></tr>`;
+}
+
 async function filterRm(q) {
   const tbody = document.getElementById('tbody-rm');
   const id = q.trim();
   if (!id) {
-    _rmData = [];
-    if (tbody) tbody.innerHTML = _emptyRmRow('Masukkan No ID rekam medis untuk menampilkan data.');
+    _rmData = _rmAllData.slice(0, _rmPreviewLimit);
+    if (tbody) tbody.innerHTML = _rowsRm(_rmData, _rmAllData.length > _rmPreviewLimit);
     return;
   }
   try {

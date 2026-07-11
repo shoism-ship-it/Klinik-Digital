@@ -27,7 +27,6 @@ async function renderLaporan() {
       <select class="form-control" id="laporan-year" style="width:auto;padding:8px 12px;" onchange="renderLaporan()">
         ${[new Date().getFullYear(), new Date().getFullYear()-1, new Date().getFullYear()-2, 2024, 2023].filter((v,i,a)=>a.indexOf(v)===i).map(y=>`<option value="${y}" ${String(y)===String(selectedYear)?'selected':''}>Tahun ${y}</option>`).join('')}
       </select>
-      <button class="btn btn-secondary" onclick="exportLaporanCsv()"><i class="fa-solid fa-file-export"></i> Export</button>
     </div>
   </div>
   <div class="stats-row">
@@ -77,29 +76,4 @@ async function renderLaporan() {
       </div>
     </div>
   </div>`;
-}
-
-async function exportLaporanCsv() {
-  const year = document.getElementById('laporan-year')?.value || new Date().getFullYear();
-  try {
-    const laporan = await apiGet('stats.php', { action: 'laporan', year });
-    const rows = [
-      ['Jenis', 'Periode', 'Jumlah'],
-      ...(laporan.kunjungan_per_bulan || []).map(r => ['Kunjungan', `Bulan ${r.bulan}`, r.jumlah]),
-      ...(laporan.diagnosa || []).map(r => ['Diagnosa', r.diagnosa, r.jumlah]),
-      ...(laporan.pendapatan_per_bulan || []).map(r => ['Pendapatan', `Bulan ${r.bulan}`, r.total]),
-      ['Total Pendapatan', String(year), laporan.total_pendapatan || 0],
-    ];
-    const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `laporan-klinik-${year}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    showToast('Laporan berhasil diexport', 'success');
-  } catch (e) { showToast(e.message, 'error'); }
 }

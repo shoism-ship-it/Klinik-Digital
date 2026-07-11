@@ -74,30 +74,6 @@ include 'includes/head.php';
         </button>
       </form>
 
-      <!-- Akses cepat untuk presentasi -->
-      <div class="quick-login-grid quick-login-grid-wide">
-        <form method="post" action="actions/login.php">
-          <input type="hidden" name="quick_role" value="admin">
-          <button type="submit" class="btn btn-primary btn-w-full">Admin</button>
-        </form>
-        <form method="post" action="actions/login.php">
-          <input type="hidden" name="quick_role" value="dokter">
-          <button type="submit" class="btn btn-outline btn-w-full">dr. Sarah</button>
-        </form>
-        <form method="post" action="actions/login.php">
-          <input type="hidden" name="quick_role" value="dokter2">
-          <button type="submit" class="btn btn-outline btn-w-full">dr. Hendra</button>
-        </form>
-        <form method="post" action="actions/login.php">
-          <input type="hidden" name="quick_role" value="dokter3">
-          <button type="submit" class="btn btn-outline btn-w-full">dr. Putri</button>
-        </form>
-        <form method="post" action="actions/login.php">
-          <input type="hidden" name="quick_role" value="pasien">
-          <button type="submit" class="btn btn-secondary btn-w-full">Pasien</button>
-        </form>
-      </div>
-
       <div style="text-align:center;">
         <span style="font-size:13px;color:var(--text-light);">Belum punya akun? </span>
         <a href="register.php" class="link-btn">Daftar Akun</a>

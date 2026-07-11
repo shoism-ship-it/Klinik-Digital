@@ -32,8 +32,10 @@ async function renderSection(key) {
   activeMenu = key;
   buildSidebar();
   const [title, sub] = sectionTitles[key] || ['', ''];
-  document.getElementById('topbar-title').textContent = title;
-  document.getElementById('topbar-sub').textContent = sub;
+  const topbarTitle = document.getElementById('topbar-title');
+  const topbarSub = document.getElementById('topbar-sub');
+  if (topbarTitle) topbarTitle.textContent = title;
+  if (topbarSub) topbarSub.textContent = sub;
   const body = document.getElementById('content-body');
   showLoading(body);
   try {

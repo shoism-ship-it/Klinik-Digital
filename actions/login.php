@@ -18,24 +18,6 @@ function signInAndRedirect(array $user): void {
     exit;
 }
 
-if (!empty($_POST['quick_role'])) {
-    $role = (string)$_POST['quick_role'];
-    $user = $authService?->quickLogin($role);
-    if (!$user) {
-        $fallback = [
-            'admin' => ['id' => null, 'name' => 'Ahmad Admin', 'role' => 'admin'],
-            'dokter' => ['id' => null, 'name' => 'dr. Sarah Amalia', 'role' => 'dokter'],
-            'dokter2' => ['id' => null, 'name' => 'dr. Hendra Kusuma', 'role' => 'dokter'],
-            'dokter3' => ['id' => null, 'name' => 'dr. Putri Maharani', 'role' => 'dokter'],
-            'pasien' => ['id' => null, 'name' => 'Andi Pratama', 'role' => 'pasien'],
-        ];
-        $user = $fallback[$role] ?? null;
-    }
-    if ($user) {
-        signInAndRedirect($user);
-    }
-}
-
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 

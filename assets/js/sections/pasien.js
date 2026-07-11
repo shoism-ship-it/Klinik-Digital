@@ -1,9 +1,12 @@
 let _editPasienId = null;
 let _pasienData   = [];
+let _pasienAllData = [];
+const _pasienPreviewLimit = 10;
 
 async function renderDataPasien() {
   const body = document.getElementById('content-body');
-  _pasienData = [];
+  _pasienAllData = await apiGet('pasien.php', { action: 'list' });
+  _pasienData = _pasienAllData.slice(0, _pasienPreviewLimit);
   body.innerHTML = _buildPasienPage(_pasienData);
 }
 
@@ -22,15 +25,15 @@ function _buildPasienPage(data) {
     <div class="table-wrap">
       <table>
         <thead><tr><th>ID</th><th>Nama</th><th>NIM</th><th>Prodi</th><th>Gender</th><th>No HP</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead>
-        <tbody id="tbody-pasien">${_emptyPasienRow('Masukkan No ID pasien untuk menampilkan data.')}</tbody>
+        <tbody id="tbody-pasien">${_rowsPasien(data, _pasienAllData.length > _pasienPreviewLimit)}</tbody>
       </table>
     </div>
   </div>`;
 }
 
-function _rowsPasien(data) {
+function _rowsPasien(data, hasMore = false) {
   if (!data.length) return _emptyPasienRow('Data pasien tidak ditemukan. Periksa No ID yang dimasukkan.');
-  return data.map(p => `<tr>
+  const rows = data.map(p => `<tr>
     <td><span class="badge badge-muted">${p.kode}</span></td>
     <td><strong>${p.nama}</strong></td>
     <td>${p.nim||'-'}</td>
@@ -45,18 +48,23 @@ function _rowsPasien(data) {
       <button class="btn btn-xs btn-danger" onclick="hapusPasien(${p.id},'${p.nama.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
     </td>
   </tr>`).join('');
+  return rows + (hasMore ? _infoPasienRow(`Menampilkan ${_pasienPreviewLimit} data pertama. Gunakan pencarian ID untuk melihat data lainnya.`) : '');
 }
 
 function _emptyPasienRow(message) {
   return `<tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:20px;">${message}</td></tr>`;
 }
 
+function _infoPasienRow(message) {
+  return `<tr><td colspan="9" style="text-align:center;color:var(--text-light);font-size:12px;padding:12px;">${message}</td></tr>`;
+}
+
 async function filterPasien(q) {
   const tbody = document.getElementById('tbody-pasien');
   const id = q.trim();
   if (!id) {
-    if (tbody) tbody.innerHTML = _emptyPasienRow('Masukkan No ID pasien untuk menampilkan data.');
-    _pasienData = [];
+    _pasienData = _pasienAllData.slice(0, _pasienPreviewLimit);
+    if (tbody) tbody.innerHTML = _rowsPasien(_pasienData, _pasienAllData.length > _pasienPreviewLimit);
     return;
   }
   try {

@@ -14,6 +14,9 @@ async function renderDashAdmin(stats, body) {
   const waiting = stats.booking_menunggu_list || [];
   const critical = stats.stok_kritis_list || [];
   body.innerHTML = `
+  <div class="section-header">
+    <div><h2>Dashboard</h2><p>Ringkasan aktivitas sistem klinik</p></div>
+  </div>
   <div class="role-dashboard role-dashboard-admin">
   <div class="stats-row">
     <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-users"></i></div><div><div class="stat-val">${stats.total_pasien??'-'}</div><div class="stat-lbl">Total Pasien</div></div></div>
@@ -84,6 +87,9 @@ async function renderDashAdmin(stats, body) {
 
 async function renderDashDokter(stats, body) {
   body.innerHTML = `
+  <div class="section-header">
+    <div><h2>Dashboard</h2><p>Ringkasan aktivitas dokter hari ini</p></div>
+  </div>
   <div class="role-dashboard role-dashboard-dokter">
   <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
     <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-calendar-day"></i></div><div><div class="stat-val">${stats.pasien_hari_ini??'-'}</div><div class="stat-lbl">Pasien Hari Ini</div></div></div>
@@ -116,6 +122,9 @@ async function renderDashDokter(stats, body) {
 
 async function renderDashPasien(stats, body) {
   body.innerHTML = `
+  <div class="section-header">
+    <div><h2>Dashboard</h2><p>Ringkasan layanan dan aktivitas pasien</p></div>
+  </div>
   <div class="role-dashboard role-dashboard-pasien">
   <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
     <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-stethoscope"></i></div><div><div class="stat-val">${stats.total_kunjungan??'-'}</div><div class="stat-lbl">Total Kunjungan</div></div></div>

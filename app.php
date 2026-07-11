@@ -48,10 +48,6 @@ include 'includes/head.php';
         <button type="button" class="menu-toggle" onclick="toggleMobileSidebar()" aria-label="Buka menu navigasi" aria-controls="sidebar">
           <i class="fa-solid fa-bars"></i>
         </button>
-        <div class="topbar-title">
-          <h2 id="topbar-title">Dashboard</h2>
-          <p id="topbar-sub">Selamat datang di sistem informasi klinik</p>
-        </div>
       </div>
       <div class="topbar-right">
         <span class="role-chip role-<?= $role ?>" id="topbar-role-chip"><?= ucfirst($role) ?></span>

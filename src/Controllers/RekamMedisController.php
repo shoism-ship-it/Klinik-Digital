@@ -49,6 +49,9 @@ class RekamMedisController extends BaseController
 
     public function create(): void
     {
+        if ($this->auth->is('admin')) {
+            $this->response->error('Admin hanya dapat melihat rekam medis', 403);
+        }
         $this->validatePayload();
         $data = $this->payloadWithRoleDoctor();
         try {
@@ -73,6 +76,9 @@ class RekamMedisController extends BaseController
 
     public function update(): void
     {
+        if ($this->auth->is('admin')) {
+            $this->response->error('Admin hanya dapat melihat rekam medis', 403);
+        }
         $id = (int)$this->input('id', 0);
         if (!$id) {
             $this->response->error('ID tidak valid');
@@ -84,6 +90,9 @@ class RekamMedisController extends BaseController
 
     public function delete(): void
     {
+        if ($this->auth->is('admin')) {
+            $this->response->error('Admin hanya dapat melihat rekam medis', 403);
+        }
         $id = (int)$this->input('id', 0);
         if (!$id) {
             $this->response->error('ID tidak valid');

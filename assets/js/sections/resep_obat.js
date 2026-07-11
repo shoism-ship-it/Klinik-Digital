@@ -37,6 +37,7 @@ function _buildResepPage(data) {
                 <td><span class="badge badge-info">${r.detail.length} obat</span></td>
                 <td>
                   <button class="btn btn-xs btn-secondary" onclick="detailResep(${r.id})"><i class="fa-solid fa-eye"></i> Detail</button>
+                  <a class="btn btn-xs btn-outline" href="actions/export_resep.php?id=${r.id}"><i class="fa-solid fa-file-pdf"></i> Export PDF</a>
                 </td>
               </tr>`;
             }).join('')}
@@ -48,17 +49,18 @@ function _buildResepPage(data) {
 }
 
 function _obatTersediaCard() {
+  const hideStockForPatient = currentRole === 'pasien';
   return `
   <div class="card">
     <div class="card-header"><h3><i class="fa-solid fa-capsules"></i> Daftar Obat Tersedia</h3></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Nama Obat</th><th>Kategori</th><th>Stok</th><th>Satuan</th></tr></thead>
+        <thead><tr><th>Nama Obat</th><th>Kategori</th>${hideStockForPatient ? '' : '<th>Stok</th>'}<th>Satuan</th></tr></thead>
         <tbody>
           ${_obatList.map(o=>`<tr>
             <td><strong>${o.nama}</strong></td>
             <td>${o.kategori||'-'}</td>
-            <td style="color:${o.stok<10?'var(--danger)':o.stok<30?'var(--warning)':'var(--success)'};font-weight:700;">${o.stok}</td>
+            ${hideStockForPatient ? '' : `<td style="color:${o.stok<10?'var(--danger)':o.stok<30?'var(--warning)':'var(--success)'};font-weight:700;">${o.stok}</td>`}
             <td>${o.satuan}</td>
           </tr>`).join('')}
         </tbody>

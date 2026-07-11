@@ -431,8 +431,6 @@ textarea.form-control { resize: vertical; line-height: 1.5; }
   color: var(--c1);
   background: var(--bg);
 }
-.topbar-title h2 { font-size: 17px; font-weight: 700; color: var(--dark); line-height: 1.2; }
-.topbar-title p { font-size: 12px; color: var(--text-light); margin-top: 1px; }
 .topbar-right { display: flex; align-items: center; gap: 10px; }
 .topbar-badge {
   position: relative;
@@ -963,7 +961,7 @@ tbody td strong { font-weight: 600; color: var(--dark); }
 }
 
 /* ============================
-   CHART AXIS + QUEUE + QRIS
+   CHART AXIS + QUEUE + CASH
    ============================ */
 .chart-axis-y {
   display: flex;
@@ -994,9 +992,9 @@ tbody td strong { font-weight: 600; color: var(--dark); }
   font-weight: 800;
   font-size: 12px;
 }
-.qris-box {
+.cash-info-box {
   display: grid;
-  grid-template-columns: 116px 1fr;
+  grid-template-columns: 76px 1fr;
   gap: 16px;
   align-items: center;
   padding: 14px;
@@ -1004,49 +1002,28 @@ tbody td strong { font-weight: 600; color: var(--dark); }
   border-radius: var(--radius);
   background: var(--bg);
 }
-.qris-box h4 {
+.cash-info-box h4 {
   font-size: 15px;
   font-weight: 800;
   color: var(--dark);
   margin-bottom: 4px;
 }
-.qris-box p {
+.cash-info-box p {
   color: var(--text-light);
   font-size: 12.5px;
   line-height: 1.6;
   margin-bottom: 8px;
 }
-.qris-visual {
-  width: 106px;
-  height: 126px;
-  padding: 8px;
-  border-radius: 10px;
-  background: white;
-  border: 1px solid var(--border);
+.cash-info-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(61,168,122,0.13);
+  color: var(--success);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 5px;
-}
-.qris-visual strong {
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: var(--dark);
-}
-.qris-grid {
-  display: grid;
-  grid-template-columns: repeat(9, 9px);
-  grid-template-rows: repeat(9, 9px);
-  gap: 2px;
-}
-.qris-grid span {
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  background: #edf2f2;
-}
-.qris-grid span.on {
-  background: var(--dark);
+  justify-content: center;
+  font-size: 25px;
 }
 
 /* ============================
@@ -1108,15 +1085,6 @@ tbody td strong { font-weight: 600; color: var(--dark); }
   font-size: 13px;
   cursor: pointer;
   color: var(--text-light);
-}
-.quick-login-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.quick-login-grid-wide {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 .schedule-grid {
   display: grid;
@@ -1279,16 +1247,6 @@ tbody td strong { font-weight: 600; color: var(--dark); }
   .menu-toggle {
     display: inline-flex;
   }
-  .topbar-title {
-    min-width: 0;
-    flex: 1;
-  }
-  .topbar-title h2,
-  .topbar-title p {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .content-body {
     overflow-y: auto;
     padding: 16px;
@@ -1342,10 +1300,10 @@ tbody td strong { font-weight: 600; color: var(--dark); }
   .modal-foot .btn {
     flex: 1 1 140px;
   }
-  .qris-box {
+  .cash-info-box {
     grid-template-columns: 1fr;
   }
-  .qris-visual {
+  .cash-info-icon {
     margin: 0 auto;
   }
   .toast {
@@ -1514,9 +1472,6 @@ tbody td strong { font-weight: 600; color: var(--dark); }
   }
   .section-header-actions .btn {
     flex: 1 1 160px;
-  }
-  .quick-login-grid {
-    grid-template-columns: 1fr;
   }
   .login-options {
     align-items: flex-start;
